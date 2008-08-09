@@ -298,7 +298,7 @@ class GenericInlineFormSet(BaseModelFormSet):
             opts.app_label, opts.object_name.lower(),
             self.ct_field.name, self.fk_field.name,
         ))
-        super(GenericInlineFormset, self).__init__(
+        super(GenericInlineFormSet, self).__init__(
             queryset=self.get_queryset(), data=data, files=files,
             prefix=self.rel_name
         )
@@ -336,8 +336,8 @@ class GenericInlineModelAdmin(InlineModelAdmin):
         else:
             fields = None
         opts = self.model._meta
-        # if there is no field called `ct_field_name` let the exception propagate
-        ct = opts.get_field(self.ct_field_name)
+        # if there is no field called `ct_field` let the exception propagate
+        ct = opts.get_field(self.ct_field)
         if not isinstance(ct, ForeignKey) or ct.rel.to != ContentType:
             raise Exception("fk_name '%s' is not a ForeignKey to ContentType" % (self.ct_field))
         obj_id = opts.get_field(self.ct_fk_field) # let the exception propagate
