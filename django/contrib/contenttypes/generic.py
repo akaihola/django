@@ -284,7 +284,7 @@ class GenericRel(ManyToManyRel):
         assert not (self.raw_id_admin and self.filter_interface), \
             "Generic relations may not use both raw_id_admin and filter_interface"
 
-from django.newforms.models import BaseModelFormSet, modelformset_factory, save_instance
+from django.forms.models import BaseModelFormSet, modelformset_factory, save_instance
 from django.contrib.admin.options import InlineModelAdmin, flatten_fieldsets
 
 class GenericInlineFormSet(BaseModelFormSet):
