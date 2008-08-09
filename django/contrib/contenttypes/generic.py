@@ -324,8 +324,8 @@ class GenericInlineFormSet(BaseModelFormSet):
         return save_instance(form, new_obj, commit=commit)
 
 class GenericInlineModelAdmin(InlineModelAdmin):
-    ct_field = None
-    ct_fk_field = None
+    ct_field = "content_type"
+    ct_fk_field = "object_id"
     formset = GenericInlineFormSet
 
     def get_formset(self, request, obj=None):
