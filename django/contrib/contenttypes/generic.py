@@ -283,3 +283,76 @@ class GenericRel(ManyToManyRel):
         self.multiple = True
         assert not (self.raw_id_admin and self.filter_interface), \
             "Generic relations may not use both raw_id_admin and filter_interface"
+
+from django.newforms.models import BaseModelFormSet, modelformset_factory, save_instance
+from django.contrib.admin.options import InlineModelAdmin, flatten_fieldsets
+
+class GenericInlineFormSet(BaseModelFormSet):
+    """
+    A formset for generic inline objects to a parent.
+    """
+    def __init__(self, data=None, files=None, instance=None, save_as_new=None):
+        opts = self.model._meta
+        self.instance = instance
+        self.rel_name = '-'.join((
+            opts.app_label, opts.object_name.lower(),
+            self.ct_field.name, self.fk_field.name,
+        ))
+        super(GenericInlineFormset, self).__init__(
+            queryset=self.get_queryset(), data=data, files=files,
+            prefix=self.rel_name
+        )
+
+    def get_queryset(self):
+        # Avoid a circular import.
+        from django.contrib.contenttypes.models import ContentType
+        if self.instance is None:
+            return []
+        return self.model._default_manager.filter(**{
+            self.ct_field.name: ContentType.objects.get_for_model(self.instance),
+            self.fk_field.name: self.instance.pk
+        })
+
+    def save_new(self, form, commit=True):
+        # Avoid a circular import.
+        from django.contrib.contenttypes.models import ContentType
+        kwargs = {
+            self.ct_field.get_attname(): ContentType.objects.get_for_model(self.instance).pk,
+            self.fk_field.get_attname(): self.instance.pk,
+        }
+        new_obj = self.model(**kwargs)
+        return save_instance(form, new_obj, commit=commit)
+
+class GenericInlineModelAdmin(InlineModelAdmin):
+    ct_field = None
+    ct_fk_field = None
+    formset = GenericInlineFormSet
+
+    def get_formset(self, request, obj=None):
+        from django.db.models import ForeignKey
+        from django.contrib.contenttypes.models import ContentType
+        if self.declared_fieldsets:
+            fields = flatten_fieldsets(self.declared_fieldsets)
+        else:
+            fields = None
+        opts = self.model._meta
+        # if there is no field called `ct_field_name` let the exception propagate
+        ct = opts.get_field(self.ct_field_name)
+        if not isinstance(ct, ForeignKey) or ct.rel.to != ContentType:
+            raise Exception("fk_name '%s' is not a ForeignKey to ContentType" % (self.ct_field))
+        obj_id = opts.get_field(self.ct_fk_field) # let the exception propagate
+        FormSet = modelformset_factory(self.model, form=self.form,
+                                       formfield_callback=self.formfield_for_dbfield,
+                                       formset=self.formset,
+                                       extra=self.extra, can_delete=True, can_order=False,
+                                       fields=fields, exclude=[ct.name, obj_id.name])
+        FormSet.ct_field = ct
+        FormSet.fk_field = obj_id
+        return FormSet
+
+class GenericStackedInline(GenericInlineModelAdmin):
+    template = 'admin/edit_inline/stacked.html'
+
+class GenericTabularInline(GenericInlineModelAdmin):
+    template = 'admin/edit_inline/tabular.html'
+
