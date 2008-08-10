@@ -278,16 +278,11 @@ def create_generic_related_manager(superclass):
 class GenericRel(ManyToManyRel):
     def __init__(self, to, related_name=None, limit_choices_to=None, symmetrical=True):
         self.to = to
-        self.num_in_admin = 0
         self.related_name = related_name
-        self.filter_interface = None
         self.limit_choices_to = limit_choices_to or {}
         self.edit_inline = False
-        self.raw_id_admin = False
         self.symmetrical = symmetrical
         self.multiple = True
-        assert not (self.raw_id_admin and self.filter_interface), \
-            "Generic relations may not use both raw_id_admin and filter_interface"
 
 class BaseGenericInlineFormSet(BaseModelFormSet):
     """
