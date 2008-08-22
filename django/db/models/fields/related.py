@@ -757,8 +757,7 @@ class OneToOneField(ForeignKey):
     def formfield(self, **kwargs):
         if self.rel.parent_link:
             return None
-        else:
-            return super(OneToOneField, self).formfield(**kwargs)
+        return super(OneToOneField, self).formfield(**kwargs)
 
 class ManyToManyField(RelatedField, Field):
     def __init__(self, to, **kwargs):
