@@ -14,6 +14,9 @@ class Author(models.Model):
     def __unicode__(self):
         return self.name
 
+class BetterAuthor(Author):
+    write_speed = models.IntegerField()
+
 class Book(models.Model):
     author = models.ForeignKey(Author)
     title = models.CharField(max_length=100)
@@ -229,6 +232,27 @@ used.
 >>> [sorted(x.items()) for x in formset.initial]
 [[('id', 1), ('name', u'Charles Baudelaire')], [('id', 3), ('name', u'Paul Verlaine')], [('id', 2), ('name', u'Walt Whitman')]]
 
+# Model inheritance in model formsets ########################################
+
+>>> BetterAuthorFormSet = modelformset_factory(BetterAuthor)
+>>> formset = BetterAuthorFormSet()
+>>> for form in formset.forms:
+...     print form.as_p()
+<p><label for="id_form-0-name">Name:</label> <input id="id_form-0-name" type="text" name="form-0-name" maxlength="100" /></p>
+<p><label for="id_form-0-write_speed">Write speed:</label> <input type="text" name="form-0-write_speed" id="id_form-0-write_speed" /><input type="hidden" name="form-0-author_ptr" id="id_form-0-author_ptr" /></p>
+
+>>> data = {
+...     'form-TOTAL_FORMS': '1', # the number of forms rendered
+...     'form-INITIAL_FORMS': '0', # the number of forms with initial data
+...     'form-0-author_ptr': '',
+...     'form-0-name': 'UUI',
+...     'form-0-write_speed': '10',
+... }
+
+>>> formset = BetterAuthorFormSet(data)
+>>> formset.is_valid()
+True
+>>> formset.save()
 
 # Inline Formsets ############################################################
 
