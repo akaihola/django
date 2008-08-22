@@ -111,14 +111,12 @@ def model_to_dict(instance, fields=None, exclude=None):
             # list for its m2m fields. Calling f.value_from_object will raise
             # an exception.
             if instance.pk is None:
-                data[f.name] = []
+                data[f.attname] = []
             else:
                 # MultipleChoiceWidget needs a list of pks, not object instances.
-                data[f.name] = [obj.pk for obj in f.value_from_object(instance)]
-        elif f.primary_key:
-            data[f.attname] = f.value_from_object(instance)
+                data[f.attname] = [obj.pk for obj in f.value_from_object(instance)]
         else:
-            data[f.name] = f.value_from_object(instance)
+            data[f.attname] = f.value_from_object(instance)
     return data
 
 def fields_for_model(model, fields=None, exclude=None, formfield_callback=lambda f: f.formfield()):
