@@ -198,7 +198,7 @@ class AdminSite(object):
         """
         from django.contrib.auth.views import password_change
         return password_change(request,
-            post_save_redirect='%spassword_change/done/' % self.root_path)
+            post_change_redirect='%spassword_change/done/' % self.root_path)
 
     def password_change_done(self, request):
         """
@@ -248,6 +248,8 @@ class AdminSite(object):
         if not request.session.test_cookie_worked():
             message = _("Looks like your browser isn't configured to accept cookies. Please enable cookies, reload this page, and try again.")
             return self.display_login_form(request, message)
+        else:
+            request.session.delete_test_cookie()
 
         # Check the password.
         username = request.POST.get('username', None)
@@ -275,7 +277,6 @@ class AdminSite(object):
                 login(request, user)
                 if request.POST.has_key('post_data'):
                     post_data = _decode_post_data(request.POST['post_data'])
-                    request.session.delete_test_cookie()
                     if post_data and not post_data.has_key(LOGIN_FORM_KEY):
                         # overwrite request.POST with the saved post_data, and continue
                         request.POST = post_data
