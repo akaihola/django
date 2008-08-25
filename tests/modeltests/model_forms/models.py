@@ -805,7 +805,7 @@ ValidationError: [u'Select a valid choice. 4 is not one of the available choices
 >>> bw = BetterWriter(name=u'Joe Better')
 >>> bw.save()
 >>> sorted(model_to_dict(bw).keys())
-['id', 'name', 'writer_ptr']
+['id', 'name', 'writer_ptr_id']
 
 # PhoneNumberField ############################################################
 

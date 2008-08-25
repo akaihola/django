@@ -239,13 +239,13 @@ used.
 >>> for form in formset.forms:
 ...     print form.as_p()
 <p><label for="id_form-0-name">Name:</label> <input id="id_form-0-name" type="text" name="form-0-name" maxlength="100" /></p>
-<p><label for="id_form-0-write_speed">Write speed:</label> <input type="text" name="form-0-write_speed" id="id_form-0-write_speed" /><input type="hidden" name="form-0-author_ptr" id="id_form-0-author_ptr" /></p>
+<p><label for="id_form-0-write_speed">Write speed:</label> <input type="text" name="form-0-write_speed" id="id_form-0-write_speed" /><input type="hidden" name="form-0-author_ptr_id" id="id_form-0-author_ptr_id" /></p>
 
 >>> data = {
 ...     'form-TOTAL_FORMS': '1', # the number of forms rendered
 ...     'form-INITIAL_FORMS': '0', # the number of forms with initial data
-...     'form-0-author_ptr': '',
-...     'form-0-name': 'UUI',
+...     'form-0-author_ptr_id': '',
+...     'form-0-name': 'Ernest Hemingway',
 ...     'form-0-write_speed': '10',
 ... }
 
@@ -253,6 +253,32 @@ used.
 >>> formset.is_valid()
 True
 >>> formset.save()
+[<BetterAuthor: Ernest Hemingway>]
+
+>>> formset = BetterAuthorFormSet()
+>>> for form in formset.forms:
+...     print form.as_p()
+<p><label for="id_form-0-name">Name:</label> <input id="id_form-0-name" type="text" name="form-0-name" value="Ernest Hemingway" maxlength="100" /></p>
+<p><label for="id_form-0-write_speed">Write speed:</label> <input type="text" name="form-0-write_speed" value="10" id="id_form-0-write_speed" /><input type="hidden" name="form-0-author_ptr_id" value="4" id="id_form-0-author_ptr_id" /></p>
+<p><label for="id_form-1-name">Name:</label> <input id="id_form-1-name" type="text" name="form-1-name" maxlength="100" /></p>
+<p><label for="id_form-1-write_speed">Write speed:</label> <input type="text" name="form-1-write_speed" id="id_form-1-write_speed" /><input type="hidden" name="form-1-author_ptr_id" id="id_form-1-author_ptr_id" /></p>
+
+>>> data = {
+...     'form-TOTAL_FORMS': '2', # the number of forms rendered
+...     'form-INITIAL_FORMS': '1', # the number of forms with initial data
+...     'form-0-author_ptr_id': '4',
+...     'form-0-name': 'Ernest Hemingway',
+...     'form-0-write_speed': '10',
+...     'form-1-author_ptr_id': '',
+...     'form-1-name': '',
+...     'form-1-write_speed': '',
+... }
+
+>>> formset = BetterAuthorFormSet(data)
+>>> formset.is_valid()
+True
+>>> formset.save()
+[]
 
 # Inline Formsets ############################################################
 

@@ -96,7 +96,7 @@ def model_to_dict(instance, fields=None, exclude=None):
     the ``fields`` argument.
     """
     # avoid a circular import
-    from django.db.models.fields.related import ManyToManyField
+    from django.db.models.fields.related import ManyToManyField, OneToOneField
     opts = instance._meta
     data = {}
     for f in opts.fields + opts.many_to_many:
@@ -115,6 +115,8 @@ def model_to_dict(instance, fields=None, exclude=None):
             else:
                 # MultipleChoiceWidget needs a list of pks, not object instances.
                 data[f.name] = [obj.pk for obj in f.value_from_object(instance)]
+        elif isinstance(f, OneToOneField):
+            data[f.attname] = f.value_from_object(instance)
         else:
             data[f.name] = f.value_from_object(instance)
     return data
