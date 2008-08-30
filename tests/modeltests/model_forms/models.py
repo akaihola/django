@@ -66,6 +66,12 @@ class ImprovedArticle(models.Model):
 class ImprovedArticleWithParentLink(models.Model):
     article = models.OneToOneField(Article, parent_link=True)
 
+class ImprovedArticleWithOneToOnePK(models.Model):
+    article = models.OneToOneField(Article, primary_key=True)
+    
+    def __unicode__(self):
+        return self.article.headline
+
 class BetterWriter(Writer):
     pass
 
@@ -811,7 +817,35 @@ ValidationError: [u'Select a valid choice. 4 is not one of the available choices
 >>> bw = BetterWriter(name=u'Joe Better')
 >>> bw.save()
 >>> sorted(model_to_dict(bw).keys())
-['id', 'name', 'writer_ptr_id']
+['id', 'name', 'writer_ptr']
+
+>>> class ImprovedArticleWithOneToOnePKForm(ModelForm):
+...     class Meta:
+...         model = ImprovedArticleWithOneToOnePK
+
+>>> print ImprovedArticleWithOneToOnePKForm().as_p()
+<p><label for="id_article">Article:</label> <select name="article" id="id_article">
+<option value="" selected="selected">---------</option>
+<option value="1">New headline</option>
+<option value="2">The walrus was Paul</option>
+<option value="3">The walrus was Paul</option>
+<option value="4">The walrus was Paul</option>
+</select></p>
+
+>>> form = ImprovedArticleWithOneToOnePKForm(data={'article': u'1'})
+>>> instance = form.save()
+>>> instance
+<ImprovedArticleWithOneToOnePK: New headline>
+
+>>> form = ImprovedArticleWithOneToOnePKForm(instance=instance)
+>>> print form.as_p()
+<p><label for="id_article">Article:</label> <select name="article" id="id_article">
+<option value="">---------</option>
+<option value="1" selected="selected">New headline</option>
+<option value="2">The walrus was Paul</option>
+<option value="3">The walrus was Paul</option>
+<option value="4">The walrus was Paul</option>
+</select></p>
 
 # PhoneNumberField ############################################################
 

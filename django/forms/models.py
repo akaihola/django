@@ -21,7 +21,7 @@ __all__ = (
 )
 
 def save_instance(form, instance, fields=None, fail_message='saved',
-                  commit=True):
+                  commit=True, exclude=None):
     """
     Saves bound Form ``form``'s cleaned_data into model instance ``instance``.
 
@@ -36,9 +36,12 @@ def save_instance(form, instance, fields=None, fail_message='saved',
     cleaned_data = form.cleaned_data
     for f in opts.fields:
         if not f.editable or isinstance(f, models.AutoField) \
+                or (isinstance(f, models.OneToOneField) and f.rel.parent_link) \
                 or not f.name in cleaned_data:
             continue
         if fields and f.name not in fields:
+            continue
+        if exclude and f.name in exclude:
             continue
         f.save_form_data(instance, cleaned_data[f.name])
     # Wrap up the saving of m2m data as a function.
@@ -115,8 +118,6 @@ def model_to_dict(instance, fields=None, exclude=None):
             else:
                 # MultipleChoiceWidget needs a list of pks, not object instances.
                 data[f.name] = [obj.pk for obj in f.value_from_object(instance)]
-        elif isinstance(f, OneToOneField):
-            data[f.attname] = f.value_from_object(instance)
         else:
             data[f.name] = f.value_from_object(instance)
     return data
@@ -291,7 +292,11 @@ class BaseModelFormSet(BaseFormSet):
             existing_objects[obj.pk] = obj
         saved_instances = []
         for form in self.initial_forms:
-            obj = existing_objects[form.cleaned_data[self.model._meta.pk.attname]]
+            cleaned_pk = form.cleaned_data[self._pk_field.name]
+            if hasattr(cleaned_pk, "pk"):
+                obj = existing_objects[cleaned_pk.pk]
+            else:
+                obj = existing_objects[cleaned_pk]
             if self.can_delete and form.cleaned_data[DELETION_FIELD_NAME]:
                 self.deleted_objects.append(obj)
                 obj.delete()
@@ -319,9 +324,13 @@ class BaseModelFormSet(BaseFormSet):
 
     def add_fields(self, form, index):
         """Add a hidden field for the object's primary key."""
-        if self.model._meta.pk.auto_created:
-            self._pk_field_name = self.model._meta.pk.attname
-            form.fields[self._pk_field_name] = IntegerField(required=False, widget=HiddenInput)
+        from django.db.models import OneToOneField
+        pk = self.model._meta.pk
+        while isinstance(pk, OneToOneField):
+            pk = pk.rel.to._meta.pk # drill down until we find a "real" pk
+        if pk.auto_created:
+            self._pk_field = self.model._meta.pk
+            form.fields[self._pk_field.name] = IntegerField(required=False, widget=HiddenInput)
         super(BaseModelFormSet, self).add_fields(form, index)
 
 def modelformset_factory(model, form=ModelForm, formfield_callback=lambda f: f.formfield(),
@@ -369,7 +378,18 @@ class BaseInlineFormSet(BaseModelFormSet):
     def save_new(self, form, commit=True):
         kwargs = {self.fk.get_attname(): self.instance.pk}
         new_obj = self.model(**kwargs)
-        return save_instance(form, new_obj, commit=commit)
+        exclude = []
+        if self.fk == self._pk_field:
+            exclude.append(self.fk.name)
+        return save_instance(form, new_obj, exclude=exclude, commit=commit)
+    
+    def add_fields(self, form, index):
+        from django.db.models import OneToOneField
+        super(BaseInlineFormSet, self).add_fields(form, index)
+        if isinstance(self._pk_field, OneToOneField):
+            queryset = self.instance.__class__._default_manager.all()
+            form.fields[self._pk_field.name] = ModelChoiceField(queryset,
+                required=False, widget=HiddenInput)
 
 def _get_foreign_key(parent_model, model, fk_name=None):
     """
@@ -419,13 +439,21 @@ def inlineformset_factory(parent_model, model, form=ModelForm,
     """
     fk = _get_foreign_key(parent_model, model, fk_name=fk_name)
     # let the formset handle object deletion by default
-
-    if exclude is not None:
-        exclude.append(fk.name)
-    else:
-        exclude = [fk.name]
+    
+    def _formfield_callback(f, **kwargs):
+        if fk == model._meta.pk:
+            if f.primary_key:
+                return None
+        return formfield_callback(f, **kwargs)
+    
+    if fk != model._meta.pk:
+        if exclude is not None:
+            exclude.append(fk.name)
+        else:
+            exclude = [fk.name]
+    
     FormSet = modelformset_factory(model, form=form,
-                                    formfield_callback=formfield_callback,
+                                    formfield_callback=_formfield_callback,
                                     formset=formset,
                                     extra=extra, can_delete=can_delete, can_order=can_order,
                                     fields=fields, exclude=exclude, max_num=max_num)
