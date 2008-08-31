@@ -117,15 +117,21 @@ class CommaSeparatedInteger(models.Model):
     def __unicode__(self):
         return self.field
 
-class Unique(models.Model):
-    unique_field = models.CharField(max_length=100, unique=True)
+class Product(models.Model):
+    slug = models.SlugField(unique=True)
+    
+    def __unicode__(self):
+        return self.slug
 
-class UniqueTogether(models.Model):
-    unique_field_1 = models.CharField(max_length=100)
-    unique_field_2 = models.CharField(max_length=100)
+class Price(models.Model):
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+    
+    def __unicode__(self):
+        return u"%s for %s" % (self.quantity, self.price)
     
     class Meta:
-        unique_together = (('unique_field_1', 'unique_field_2'),)
+        unique_together = (('price', 'quantity'),)
 
 class ArticleStatus(models.Model):
     status = models.CharField(max_length=2, choices=ARTICLE_STATUS_CHAR, blank=True, null=True)
@@ -1143,38 +1149,40 @@ u'1,,2'
 >>> f.clean('1')
 u'1'
 
->>> class UniqueForm(ModelForm):
+# unique/unique_together validation
+
+>>> class ProductForm(ModelForm):
 ...     class Meta:
-...         model = Unique
->>> form1 = UniqueForm({'unique_field': 'unique'})
->>> form1.is_valid()
+...         model = Product
+>>> form = ProductForm({'slug': 'teddy-bear-blue'})
+>>> form.is_valid()
 True
->>> obj = form1.save()
+>>> obj = form.save()
 >>> obj
-<Unique: Unique object>
->>> form2 = UniqueForm({'unique_field': 'unique'})
->>> form2.is_valid()
+<Product: teddy-bear-blue>
+>>> form = ProductForm({'slug': 'teddy-bear-blue'})
+>>> form.is_valid()
 False
->>> form2._errors
-{'unique_field': [u'Unique with this Unique field already exists.']}
->>> form3 = UniqueForm({'unique_field': 'unique'}, instance=obj)
->>> form3.is_valid()
+>>> form._errors
+{'slug': [u'Product with this Slug already exists.']}
+>>> form = ProductForm({'slug': 'teddy-bear-blue'}, instance=obj)
+>>> form.is_valid()
 True
 
 # ModelForm test of unique_together constraint
->>> class UniqueTogetherForm(ModelForm):
+>>> class PriceForm(ModelForm):
 ...     class Meta:
-...         model = UniqueTogether
->>> form1 = UniqueTogetherForm({'unique_field_1': 'unique1', 'unique_field_2': 'unique2'})
->>> form1.is_valid()
+...         model = Price
+>>> form = PriceForm({'price': '6.00', 'quantity': '1'})
+>>> form.is_valid()
 True
->>> form1.save()
-<UniqueTogether: UniqueTogether object>
->>> form2 = UniqueTogetherForm({'unique_field_1': 'unique1', 'unique_field_2': 'unique2'})
->>> form2.is_valid()
+>>> form.save()
+<Price: 1 for 6.00>
+>>> form = PriceForm({'price': '6.00', 'quantity': '1'})
+>>> form.is_valid()
 False
->>> form2._errors
-{'__all__': [u'Unique Together with this Unique field 1 and Unique field 2 already exists.']}
+>>> form._errors
+{'__all__': [u'Price with this Price and Quantity already exists.']}
 
 # Choices on CharField and IntegerField
 >>> class ArticleForm(ModelForm):
