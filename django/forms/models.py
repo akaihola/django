@@ -239,14 +239,14 @@ class BaseModelForm(BaseForm):
                     field_name = unique_check[0]
                     field_label = self.fields[field_name].label
                     self._errors[field_name] = ErrorList([
-                        _("%(model_name)s with this %(field_label)s already exists.") %\
+                        _("%(model_name)s with this %(field_label)s already exists.") % \
                         {'model_name': model_name, 'field_label': field_label}
                     ])
                 else:
                     field_labels = [self.fields[field_name].label for field_name in unique_check]
                     field_labels = get_text_list(field_labels, _('and'))
                     form_errors.append(
-                        _("%(model_name)s with this %(field_label)s already exists.") %\
+                        _("%(model_name)s with this %(field_label)s already exists.") % \
                         {'model_name': model_name, 'field_label': field_labels}
                     )
                 for field_name in unique_check:
