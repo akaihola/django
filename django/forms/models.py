@@ -328,8 +328,8 @@ class BaseModelFormSet(BaseFormSet):
         pk = self.model._meta.pk
         while isinstance(pk, OneToOneField):
             pk = pk.rel.to._meta.pk # drill down until we find a "real" pk
+        self._pk_field = self.model._meta.pk
         if pk.auto_created:
-            self._pk_field = self.model._meta.pk
             form.fields[self._pk_field.name] = IntegerField(required=False, widget=HiddenInput)
         super(BaseModelFormSet, self).add_fields(form, index)
 

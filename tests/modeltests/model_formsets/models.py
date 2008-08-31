@@ -36,7 +36,6 @@ class CustomPrimaryKey(models.Model):
     my_pk = models.CharField(max_length=10, primary_key=True)
     some_field = models.CharField(max_length=100)
 
-
 # models for inheritance tests.
 
 class Place(models.Model):
@@ -47,8 +46,12 @@ class Place(models.Model):
         return self.name
 
 class Owner(models.Model):
+    auto_id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
     place = models.ForeignKey(Place)
+    
+    def __unicode__(self):
+        return "%s at %s" % (self.name, self.place)
 
 class Restaurant(Place):
     serves_pizza = models.BooleanField()
@@ -418,6 +421,28 @@ We need to ensure that it is displayed
 ...     print form.as_p()
 <p><label for="id_form-0-my_pk">My pk:</label> <input id="id_form-0-my_pk" type="text" name="form-0-my_pk" maxlength="10" /></p>
 <p><label for="id_form-0-some_field">Some field:</label> <input id="id_form-0-some_field" type="text" name="form-0-some_field" maxlength="100" /></p>
+
+# aa ##########################################################################
+
+>>> place = Place(name=u'Giordanos', city=u'Chicago')
+>>> place.save()
+
+>>> FormSet = inlineformset_factory(Place, Owner, extra=1, can_delete=False)
+>>> formset = FormSet(instance=place)
+>>> for form in formset.forms:
+...     print form.as_p()
+<p><label for="id_owner_set-0-name">Name:</label> <input id="id_owner_set-0-name" type="text" name="owner_set-0-name" maxlength="100" /></p>
+
+>>> data = {
+...     'owner_set-TOTAL_FORMS': '1',
+...     'owner_set-INITIAL_FORMS': '0',
+...     'owner_set-0-name': u'Joe Perry',
+... }
+>>> formset = FormSet(data, instance=place)
+>>> formset.is_valid()
+True
+>>> formset.save()
+[<Owner: Joe Perry at Giordanos>]
 
 # Foreign keys in parents ########################################
 
