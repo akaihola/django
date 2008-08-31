@@ -3,6 +3,7 @@ Helper functions for creating Form classes from Django models
 and database field objects.
 """
 
+from django.utils.text import get_text_list
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_unicode
 from django.utils.datastructures import SortedDict
@@ -228,10 +229,17 @@ class BaseModelForm(BaseForm):
                 if len(unique_check) == 1:
                     field_name = unique_check[0]
                     field_label = self.fields[field_name].label
-                    self._errors[field_name] = ErrorList(["%s with this %s already exists." % (model_name, field_label)])
+                    self._errors[field_name] = ErrorList([
+                        _("%(model_name)s with this %(field_label)s already exists.") %\
+                        {'model_name': model_name, 'field_label': field_label}
+                    ])
                 else:
                     field_labels = [self.fields[field_name].label for field_name in unique_check]
-                    form_errors.append("%s with this %s already exists." % (model_name, ' and '.join(field_labels)))
+                    field_labels = get_text_list(field_labels, _('and'))
+                    form_errors.append(
+                        _("%(model_name)s with this %(field_label)s already exists.") %\
+                        {'model_name': model_name, 'field_label': field_labels}
+                    )
                 for field_name in unique_check:
                     del self.cleaned_data[field_name]
         if form_errors:
