@@ -27,6 +27,12 @@ ARTICLE_STATUS = (
     (3, 'Live'),
 )
 
+ARTICLE_STATUS_CHAR = (
+    ('d', 'Draft'),
+    ('p', 'Pending'),
+    ('l', 'Live'),
+)
+
 class Category(models.Model):
     name = models.CharField(max_length=20)
     slug = models.SlugField(max_length=20)
@@ -120,6 +126,10 @@ class UniqueTogether(models.Model):
     
     class Meta:
         unique_together = (('unique_field_1', 'unique_field_2'),)
+
+class ArticleStatus(models.Model):
+    status = models.CharField(max_length=2, choices=ARTICLE_STATUS_CHAR, blank=True, null=True)
+
 
 __test__ = {'API_TESTS': """
 >>> from django import forms
@@ -1152,7 +1162,6 @@ False
 True
 
 # ModelForm test of unique_together constraint
-
 >>> class UniqueTogetherForm(ModelForm):
 ...     class Meta:
 ...         model = UniqueTogether
@@ -1166,5 +1175,24 @@ True
 False
 >>> form2._errors
 {'__all__': [u'Unique Together with this Unique field 1 and Unique field 2 already exists.']}
+
+# Choices on CharField and IntegerField
+>>> class ArticleForm(ModelForm):
+...     class Meta:
+...         model = Article
+>>> f = ArticleForm()
+>>> f.fields['status'].clean('42')
+Traceback (most recent call last):
+...
+ValidationError: [u'Select a valid choice. 42 is not one of the available choices.']
+
+>>> class ArticleStatusForm(ModelForm):
+...     class Meta:
+...         model = ArticleStatus
+>>> f = ArticleStatusForm()
+>>> f.fields['status'].clean('z')
+Traceback (most recent call last):
+...
+ValidationError: [u'Select a valid choice. z is not one of the available choices.']
 
 """}
