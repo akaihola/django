@@ -202,6 +202,39 @@ class BaseModelForm(BaseForm):
             object_data.update(initial)
         super(BaseModelForm, self).__init__(data, files, auto_id, prefix, object_data,
                                             error_class, label_suffix, empty_permitted)
+    def clean(self):
+        self.validate_unique()
+        return self.cleaned_data
+    
+    def validate_unique(self):
+        from django.db.models.fields import FieldDoesNotExist
+        unique_checks = self.instance._meta.unique_together[:]
+        form_errors = []
+        for name, field in self.fields.items():
+            try:
+                if name in self.cleaned_data and self.instance._meta.get_field_by_name(name)[0].unique and not self.instance._meta.get_field_by_name(name)[0].primary_key:
+                    unique_checks.append((name,))
+            except FieldDoesNotExist:
+                # This is an extra field that's not on the model, ignore it
+                pass
+        for unique_check in [check for check in unique_checks if not any([x in self._errors for x in check])]:
+            kwargs = dict([(field_name, self.cleaned_data[field_name]) for field_name in unique_check])
+            qs = self.instance.__class__._default_manager.filter(**kwargs)
+            if self.instance.pk is not None:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.count() != 0:
+                model_name = self.instance._meta.verbose_name.title()
+                if len(unique_check) == 1:
+                    field_name = unique_check[0]
+                    field_label = self.fields[field_name].label
+                    self._errors[field_name] = ErrorList(["%s with this %s already exists." % (model_name, field_label)])
+                else:
+                    field_labels = [self.fields[field_name].label for field_name in unique_check]
+                    form_errors.append("%s with this %s already exists." % (model_name, ' and '.join(field_labels)))
+                for field_name in unique_check:
+                    del self.cleaned_data[field_name]
+        if form_errors:
+            raise ValidationError(form_errors)
 
     def save(self, commit=True):
         """

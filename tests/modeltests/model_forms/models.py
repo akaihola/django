@@ -111,6 +111,16 @@ class CommaSeparatedInteger(models.Model):
     def __unicode__(self):
         return self.field
 
+class Unique(models.Model):
+    unique_field = models.CharField(max_length=100, unique=True)
+
+class UniqueTogether(models.Model):
+    unique_field_1 = models.CharField(max_length=100)
+    unique_field_2 = models.CharField(max_length=100)
+    
+    class Meta:
+        unique_together = (('unique_field_1', 'unique_field_2'),)
+
 __test__ = {'API_TESTS': """
 >>> from django import forms
 >>> from django.forms.models import ModelForm, model_to_dict
@@ -1122,5 +1132,39 @@ ValidationError: [u'Enter only digits separated by commas.']
 u'1,,2'
 >>> f.clean('1')
 u'1'
+
+>>> class UniqueForm(ModelForm):
+...     class Meta:
+...         model = Unique
+>>> form1 = UniqueForm({'unique_field': 'unique'})
+>>> form1.is_valid()
+True
+>>> obj = form1.save()
+>>> obj
+<Unique: Unique object>
+>>> form2 = UniqueForm({'unique_field': 'unique'})
+>>> form2.is_valid()
+False
+>>> form2._errors
+{'unique_field': [u'Unique with this Unique field already exists.']}
+>>> form3 = UniqueForm({'unique_field': 'unique'}, instance=obj)
+>>> form3.is_valid()
+True
+
+# ModelForm test of unique_together constraint
+
+>>> class UniqueTogetherForm(ModelForm):
+...     class Meta:
+...         model = UniqueTogether
+>>> form1 = UniqueTogetherForm({'unique_field_1': 'unique1', 'unique_field_2': 'unique2'})
+>>> form1.is_valid()
+True
+>>> form1.save()
+<UniqueTogether: UniqueTogether object>
+>>> form2 = UniqueTogetherForm({'unique_field_1': 'unique1', 'unique_field_2': 'unique2'})
+>>> form2.is_valid()
+False
+>>> form2._errors
+{'__all__': [u'Unique Together with this Unique field 1 and Unique field 2 already exists.']}
 
 """}
