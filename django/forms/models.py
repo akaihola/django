@@ -20,6 +20,15 @@ __all__ = (
     'ModelMultipleChoiceField',
 )
 
+try:
+    any
+except NameError:
+    def any(seq):
+        for x in seq:
+            if seq:
+                return True
+        return False
+
 def save_instance(form, instance, fields=None, fail_message='saved',
                   commit=True, exclude=None):
     """
@@ -218,7 +227,7 @@ class BaseModelForm(BaseForm):
                 continue
             if name in self.cleaned_data and f.unique and not f.primary_key:
                 unique_checks.append((name,))
-        for unique_check in [check for check in unique_checks if [x in self._errors for x in check]]:
+        for unique_check in [check for check in unique_checks if not any([x in self._errors for x in check])]:
             kwargs = dict([(field_name, self.cleaned_data[field_name]) for field_name in unique_check])
             qs = self.instance.__class__._default_manager.filter(**kwargs)
             if self.instance.pk is not None:
