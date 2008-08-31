@@ -233,7 +233,7 @@ class BaseModelForm(BaseForm):
             qs = self.instance.__class__._default_manager.filter(**kwargs)
             if self.instance.pk is not None:
                 qs = qs.exclude(pk=self.instance.pk)
-            if qs.count() != 0:
+            if qs.extra(select={'a': 1}).values('a').order_by():
                 model_name = self.instance._meta.verbose_name.title()
                 if len(unique_check) == 1:
                     field_name = unique_check[0]
