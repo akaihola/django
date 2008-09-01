@@ -72,3 +72,10 @@ def sorted(in_value):
     out_value = in_value[:]
     out_value.sort()
     return out_value
+
+def any(seq):
+    """any implementation."""
+    for x in seq:
+        if seq:
+            return True
+    return False

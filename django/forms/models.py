@@ -24,11 +24,7 @@ __all__ = (
 try:
     any
 except NameError:
-    def any(seq):
-        for x in seq:
-            if seq:
-                return True
-        return False
+    from django.utils.itercompat import any # pre-2.5
 
 def save_instance(form, instance, fields=None, fail_message='saved',
                   commit=True, exclude=None):
