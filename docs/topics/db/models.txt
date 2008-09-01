@@ -143,14 +143,12 @@ optional. They're fully explained in the :ref:`reference
 ones:
 
     :attr:`~Field.null`
-
         If ``True``, Django will store empty values as ``NULL`` in the database.
         Default is ``False``.
 
     :attr:`~Field.blank`
-
         If ``True``, the field is allowed to be blank. Default is ``False``.
-    
+
         Note that this is different than :attr:`~Field.null`.
         :attr:`~Field.null` is purely database-related, whereas
         :attr:`~Field.blank` is validation-related. If a field has
@@ -159,7 +157,6 @@ ones:
         <Field.blank>`, the field will be required.
 
     :attr:`~Field.choices`
-
         An iterable (e.g., a list or tuple) of 2-tuples to use as choices for
         this field. If this is given, Django's admin will use a select box
         instead of the standard text field and will limit choices to the choices
@@ -174,21 +171,18 @@ ones:
                 ('SR', 'Senior'),
                 ('GR', 'Graduate'),
             )
-            
-    :attr:`~Field.default`
 
+    :attr:`~Field.default`
         The default value for the field. This can be a value or a callable
         object. If callable it will be called every time a new object is
         created.
-    
-    :attr:`~Field.help_text`
 
+    :attr:`~Field.help_text`
         Extra "help" text to be displayed under the field on the object's admin
         form. It's useful for documentation even if your object doesn't have an
         admin form.
 
     :attr:`~Field.primary_key`
-
         If ``True``, this field is the primary key for the model.
 
         If you don't specify :attr:`primary_key=True <Field.primary_key>` for
@@ -199,7 +193,6 @@ ones:
         see :ref:`automatic-primary-key-fields`.
 
     :attr:`~Field.unique`
-
         If ``True``, this field must be unique throughout the table.
 
 Again, these are just short descriptions of the most common field options. Full
@@ -499,40 +492,55 @@ of the intermediate model::
     
 
 One-to-one relationships
-------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-One-to-one relationships are very similar to many-to-one relationships. If you
-define a :class:`~django.db.models.OneToOneField` on your model, instances of
-that model will have access to the related object via a simple attribute of the
-model.
+To define a one-to-one relationship, use
+:class:`~django.db.models.OneToOneField`. You use it just like any other
+``Field`` type: by including it as a class attribute of your model.
 
-For example::
+This is most useful on the primary key of an object when that object "extends"
+another object in some way.
 
-    class EntryDetail(models.Model):
-        entry = models.OneToOneField(Entry)
-        details = models.TextField()
+:class:`~django.db.models.OneToOneField` requires a positional argument: the
+class to which the model is related.
 
-    ed = EntryDetail.objects.get(id=2)
-    ed.entry # Returns the related Entry object.
+For example, if you were building a database of "places", you would
+build pretty standard stuff such as address, phone number, etc. in the
+database. Then, if you wanted to build a database of restaurants on
+top of the places, instead of repeating yourself and replicating those
+fields in the ``Restaurant`` model, you could make ``Restaurant`` have
+a :class:`~django.db.models.OneToOneField` to ``Place`` (because a
+restaurant "is a" place; in fact, to handle this you'd typically use
+:ref:`inheritance <model-inheritance>`, which involves an implicit
+one-to-one relation).
 
-The difference comes in "reverse" queries. The related model in a one-to-one
-relationship also has access to a :class:`~django.db.models.Manager` object, but
-that :class:`~django.db.models.Manager` represents a single object, rather than
-a collection of objects::
+As with :class:`~django.db.models.ForeignKey`, a
+:ref:`recursive relationship <recursive-relationships>`
+can be defined and
+:ref:`references to as-yet undefined models <lazy-relationships>`
+can be made; see
+:class:`the model field reference <django.db.models.fields.OneToOneField>`
+for details.
 
-    e = Entry.objects.get(id=2)
-    e.entrydetail # returns the related EntryDetail object
+.. seealso::
 
-If no object has been assigned to this relationship, Django will raise
-a ``DoesNotExist`` exception.
+    See the `One-to-one relationship model example`_ for a full example.
 
-Instances can be assigned to the reverse relationship in the same way as
-you would assign the forward relationship::
+.. _One-to-one relationship model example: http://www.djangoproject.com/documentation/models/one_to_one/
 
-    e.entrydetail = ed
+**New in Django development version**
+
+:class:`~django.db.models.OneToOneField` fields also accept one optional argument
+described in the :ref:`model field reference <ref-onetoone>`.
+
+:class:`~django.db.models.OneToOneField` classes used to automatically become
+the primary key on a model. This is no longer true (although you can manually
+pass in the :attr:`~django.db.models.Field.primary_key` argument if you like).
+Thus, it's now possible to have multiple fields of type
+:class:`~django.db.models.OneToOneField` on a single model.
 
 Models across files
-~~~~~~~~~~~~~~~~~~~
+-------------------
 
 It's perfectly OK to relate a model to one from another app. To do this, just
 import the related model at the top of the model that holds your model. Then,
