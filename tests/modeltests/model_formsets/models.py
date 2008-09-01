@@ -73,6 +73,22 @@ class Restaurant(Place):
     def __unicode__(self):
         return self.name
 
+class Product(models.Model):
+    slug = models.SlugField(unique=True)
+
+    def __unicode__(self):
+        return self.slug
+
+class Price(models.Model):
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    quantity = models.PositiveIntegerField()
+
+    def __unicode__(self):
+        return u"%s for %s" % (self.quantity, self.price)
+
+    class Meta:
+        unique_together = (('price', 'quantity'),)
+
 class MexicanRestaurant(Restaurant):
     serves_tacos = models.BooleanField()
 
@@ -552,5 +568,10 @@ True
 <class 'django.db.models.fields.related.ForeignKey'>
 >>> type(_get_foreign_key(MexicanRestaurant, Owner))
 <class 'django.db.models.fields.related.ForeignKey'>
+
+# unique/unique_together validation ###########################################
+
+>>> FormSet = modelformset_factory(Product)
+>>> 
 
 """}
