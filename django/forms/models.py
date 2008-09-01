@@ -298,12 +298,9 @@ class BaseModelFormSet(BaseFormSet):
         super(BaseModelFormSet, self).__init__(**defaults)
     
     def _construct_form(self, i, **kwargs):
-        form = super(BaseModelFormSet, self)._construct_form(i, **kwargs)
         if i < self._initial_form_count:
-            form.instance = self.get_queryset()[i]
-        else:
-            form.instance = self.get_queryset().model()
-        return form
+            kwargs['instance'] = self.get_queryset()[i]
+        return super(BaseModelFormSet, self)._construct_form(i, **kwargs)
         
     def get_queryset(self):
         if not hasattr(self, '_queryset'):
