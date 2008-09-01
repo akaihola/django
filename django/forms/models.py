@@ -214,7 +214,7 @@ class BaseModelForm(BaseForm):
     
     def validate_unique(self):
         from django.db.models.fields import FieldDoesNotExist
-        unique_checks = self.instance._meta.unique_together[:]
+        unique_checks = list(self.instance._meta.unique_together[:])
         form_errors = []
         for name, field in self.fields.items():
             try:
