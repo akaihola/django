@@ -417,6 +417,8 @@ class BaseInlineFormSet(BaseModelFormSet):
     def _construct_form(self, i, **kwargs):
         form = super(BaseInlineFormSet, self)._construct_form(i, **kwargs)
         if self.save_as_new:
+            # kill the pk from form data so that it doesn't cause a unique
+            # validation error when trying to re-save the forms.
             form.data[form.add_prefix(self._pk_field.name)] = None
         return form
 
