@@ -119,10 +119,6 @@ class ForeignKeyRawIdWidget(forms.TextInput):
             (related_url, url, name))
         output.append('<img src="%simg/admin/selector-search.gif" width="16" height="16" alt="%s" /></a>' % (settings.ADMIN_MEDIA_PREFIX, _('Lookup')))
         if value:
-            # if to_field for this relation is not the primary key field, transform value to 
-            # target's pk value so selected choice is correct in the widget display
-#            if hasattr(self.rel, 'field_name') and self.rel.field_name != self.rel.to._meta.pk.attname:
-#                value = self.rel.to._default_manager.get(**{self.rel.field_name: value}).pk
             output.append(self.label_for_value(value))
         return mark_safe(u''.join(output))
     
@@ -197,10 +193,6 @@ class RelatedFieldWidgetWrapper(forms.Widget):
 
     def render(self, name, value, *args, **kwargs):
         rel_to = self.rel.to
-        # if to_field for this relation is not the primary key field, transform value to 
-        # target's pk value so selected choice is correct in the widget display
-#        if value and self.rel.field_name != rel_to._meta.pk.attname:
-#            value = rel_to._default_manager.get(**{self.rel.field_name: value}).pk
         related_url = '../../../%s/%s/' % (rel_to._meta.app_label, rel_to._meta.object_name.lower())
         self.widget.choices = self.choices
         output = [self.widget.render(name, value, *args, **kwargs)]
