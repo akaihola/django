@@ -571,7 +571,39 @@ True
 
 # unique/unique_together validation ###########################################
 
->>> FormSet = modelformset_factory(Product)
->>> 
+>>> FormSet = modelformset_factory(Product, extra=1)
+>>> data = {
+...     'form-TOTAL_FORMS': '2',
+...     'form-INITIAL_FORMS': '0',
+...     'form-0-slug': 'car-red',
+... }
+>>> formset = FormSet(data)
+>>> formset.is_valid()
+True
+>>> formset.save()
+[<Product: car-red>]
+
+>>> data = {
+...     'form-TOTAL_FORMS': '2',
+...     'form-INITIAL_FORMS': '0',
+...     'form-0-slug': 'car-red',
+... }
+>>> formset = FormSet(data)
+>>> formset.is_valid()
+False
+>>> formset.errors
+[{'slug': [u'Product with this Slug already exists.']}, {}]
+
+>>> FormSet = modelformset_factory(Product, extra=2)
+>>> data = {
+...     'form-TOTAL_FORMS': '2',
+...     'form-INITIAL_FORMS': '0',
+...     'form-0-slug': 'car-blue',
+...     'form-1-slug': 'car-blue',
+... }
+>>> formset = FormSet(data)
+>>> formset.is_valid()
+False
+>>> formset.errors
 
 """}
