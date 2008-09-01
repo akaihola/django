@@ -640,8 +640,8 @@ False
 ...     'form-INITIAL_FORMS': '0',
 ...     'form-0-price': u'10.00',
 ...     'form-0-quantity': '2',
-...     'form-0-price': u'10.00',
-...     'form-0-quantity': '2',
+...     'form-1-price': u'10.00',
+...     'form-1-quantity': '2',
 ... }
 >>> formset = FormSet(data)
 >>> formset.is_valid()
