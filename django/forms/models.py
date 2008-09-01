@@ -413,6 +413,12 @@ class BaseInlineFormSet(BaseModelFormSet):
             self._total_form_count = self._initial_form_count
             self._initial_form_count = 0
         super(BaseInlineFormSet, self)._construct_forms()
+    
+    def _construct_form(self, i, **kwargs):
+        form = super(BaseInlineFormSet, self)._construct_form(i, **kwargs)
+        if self.save_as_new:
+            form.data[form.add_prefix(self._pk_field.name)] = None
+        return form
 
     def get_queryset(self):
         """
