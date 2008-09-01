@@ -222,7 +222,7 @@ class BaseModelForm(BaseForm):
             except FieldDoesNotExist:
                 # This is an extra field that's not on the model, ignore it
                 continue
-            if name in self.cleaned_data and f.unique and not f.primary_key:
+            if name in self.cleaned_data and f.unique:
                 unique_checks.append((name,))
         for unique_check in [check for check in unique_checks if not any([x in self._errors for x in check])]:
             kwargs = dict([(field_name, self.cleaned_data[field_name]) for field_name in unique_check])
