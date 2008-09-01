@@ -594,19 +594,6 @@ False
 >>> formset.errors
 [{'slug': [u'Product with this Slug already exists.']}]
 
->>> FormSet = modelformset_factory(Product, extra=2)
->>> data = {
-...     'form-TOTAL_FORMS': '2',
-...     'form-INITIAL_FORMS': '0',
-...     'form-0-slug': 'car-blue',
-...     'form-1-slug': 'car-blue',
-... }
->>> formset = FormSet(data)
->>> formset.is_valid()
-False
->>> formset.errors
-[{'slug': [u'Product with this Slug already exists.']}, {}]
-
 # unique_together
 
 >>> FormSet = modelformset_factory(Price, extra=1)
@@ -627,21 +614,6 @@ True
 ...     'form-INITIAL_FORMS': '0',
 ...     'form-0-price': u'12.00',
 ...     'form-0-quantity': '1',
-... }
->>> formset = FormSet(data)
->>> formset.is_valid()
-False
->>> formset.errors
-[{'__all__': [u'Price with this Price and Quantity already exists.']}]
-
->>> FormSet = modelformset_factory(Price, extra=2)
->>> data = {
-...     'form-TOTAL_FORMS': '2',
-...     'form-INITIAL_FORMS': '0',
-...     'form-0-price': u'10.00',
-...     'form-0-quantity': '2',
-...     'form-1-price': u'10.00',
-...     'form-1-quantity': '2',
 ... }
 >>> formset = FormSet(data)
 >>> formset.is_valid()
