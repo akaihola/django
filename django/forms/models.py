@@ -293,19 +293,30 @@ class BaseModelFormSet(BaseFormSet):
                  queryset=None, **kwargs):
         self.queryset = queryset
         defaults = {'data': data, 'files': files, 'auto_id': auto_id, 'prefix': prefix}
-        if self.max_num > 0:
-            qs = self.get_queryset()[:self.max_num]
-        else:
-            qs = self.get_queryset()
-        defaults['initial'] = [model_to_dict(obj) for obj in qs]
+        defaults['initial'] = [model_to_dict(obj) for obj in self.get_queryset()]
         defaults.update(kwargs)
         super(BaseModelFormSet, self).__init__(**defaults)
-
+    
+    def _construct_form(self, i, **kwargs):
+        form = super(BaseModelFormSet, self)._construct_form(i, **kwargs)
+        if i < self._initial_form_count:
+            form.instance = self.get_queryset()[i]
+        else:
+            form.instance = self.get_queryset().model()
+        return form
+        
     def get_queryset(self):
-        if self.queryset is not None:
-            return self.queryset
-        return self.model._default_manager.get_query_set()
-
+        if not hasattr(self, '_queryset'):
+            if self.queryset is not None:
+                qs = self.queryset
+            else:
+                qs = self.model._default_manager.get_query_set()
+            if self.max_num > 0:
+                self._queryset = qs[:self.max_num]
+            else:
+                self._queryset = qs
+        return self._queryset
+    
     def save_new(self, form, commit=True):
         """Saves and returns a new model instance for the given form."""
         return save_instance(form, self.model(), exclude=[self._pk_field.name], commit=commit)
