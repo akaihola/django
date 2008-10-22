@@ -481,9 +481,9 @@ class BaseInlineFormSet(BaseModelFormSet):
 
     def add_fields(self, form, index):
         super(BaseInlineFormSet, self).add_fields(form, index)
+        form.fields[self.fk.name] = InlineForeignKeyField(self.instance, label=form.fields[self.fk.name].label)
         if self._pk_field == self.fk:
             form.fields[self._pk_field.name] = IntegerField(required=False, widget=HiddenInput)
-        form.fields[self.fk.name] = InlineForeignKeyField(self.instance, label=form.fields[self.fk.name].label)
 
 def _get_foreign_key(parent_model, model, fk_name=None):
     """
@@ -553,6 +553,10 @@ def inlineformset_factory(parent_model, model, form=ModelForm,
 
 # Fields #####################################################################
 
+class InlineForeignKeyHiddenInput(HiddenInput):
+    def _has_changed(self, initial, data):
+        return False
+
 class InlineForeignKeyField(Field):
     """
     A basic integer field that deals with validating the given value to a
@@ -565,11 +569,16 @@ class InlineForeignKeyField(Field):
     
     def __init__(self, parent_instance, *args, **kwargs):
         self.parent_instance = parent_instance
-        kwargs["required"] = True
-        kwargs["widget"] = HiddenInput
+        if self.parent_instance is not None:
+            kwargs["initial"] = self.parent_instance.pk
+        kwargs["required"] = False
+        kwargs["widget"] = InlineForeignKeyHiddenInput
         super(InlineForeignKeyField, self).__init__(*args, **kwargs)
     
     def clean(self, value):
+        if value in EMPTY_VALUES:
+            # backward compatibility
+            return self.parent_instance
         try:
             value = int(str(value))
         except (ValueError, TypeError):

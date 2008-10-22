@@ -382,9 +382,9 @@ admin system's edit inline functionality works.
 >>> formset = AuthorBooksFormSet(instance=author)
 >>> for form in formset.forms:
 ...     print form.as_p()
-<p><label for="id_book_set-0-title">Title:</label> <input id="id_book_set-0-title" type="text" name="book_set-0-title" maxlength="100" /><input type="hidden" name="book_set-0-id" id="id_book_set-0-id" /></p>
-<p><label for="id_book_set-1-title">Title:</label> <input id="id_book_set-1-title" type="text" name="book_set-1-title" maxlength="100" /><input type="hidden" name="book_set-1-id" id="id_book_set-1-id" /></p>
-<p><label for="id_book_set-2-title">Title:</label> <input id="id_book_set-2-title" type="text" name="book_set-2-title" maxlength="100" /><input type="hidden" name="book_set-2-id" id="id_book_set-2-id" /></p>
+<p><label for="id_book_set-0-title">Title:</label> <input id="id_book_set-0-title" type="text" name="book_set-0-title" maxlength="100" /><input type="hidden" name="book_set-0-author" value="1" id="id_book_set-0-author" /><input type="hidden" name="book_set-0-id" id="id_book_set-0-id" /></p>
+<p><label for="id_book_set-1-title">Title:</label> <input id="id_book_set-1-title" type="text" name="book_set-1-title" maxlength="100" /><input type="hidden" name="book_set-1-author" value="1" id="id_book_set-1-author" /><input type="hidden" name="book_set-1-id" id="id_book_set-1-id" /></p>
+<p><label for="id_book_set-2-title">Title:</label> <input id="id_book_set-2-title" type="text" name="book_set-2-title" maxlength="100" /><input type="hidden" name="book_set-2-author" value="1" id="id_book_set-2-author" /><input type="hidden" name="book_set-2-id" id="id_book_set-2-id" /></p>
 
 >>> data = {
 ...     'book_set-TOTAL_FORMS': '3', # the number of forms rendered
@@ -416,9 +416,9 @@ book.
 >>> formset = AuthorBooksFormSet(instance=author)
 >>> for form in formset.forms:
 ...     print form.as_p()
-<p><label for="id_book_set-0-title">Title:</label> <input id="id_book_set-0-title" type="text" name="book_set-0-title" value="Les Fleurs du Mal" maxlength="100" /><input type="hidden" name="book_set-0-id" value="1" id="id_book_set-0-id" /></p>
-<p><label for="id_book_set-1-title">Title:</label> <input id="id_book_set-1-title" type="text" name="book_set-1-title" maxlength="100" /><input type="hidden" name="book_set-1-id" id="id_book_set-1-id" /></p>
-<p><label for="id_book_set-2-title">Title:</label> <input id="id_book_set-2-title" type="text" name="book_set-2-title" maxlength="100" /><input type="hidden" name="book_set-2-id" id="id_book_set-2-id" /></p>
+<p><label for="id_book_set-0-title">Title:</label> <input id="id_book_set-0-title" type="text" name="book_set-0-title" value="Les Fleurs du Mal" maxlength="100" /><input type="hidden" name="book_set-0-author" value="1" id="id_book_set-0-author" /><input type="hidden" name="book_set-0-id" value="1" id="id_book_set-0-id" /></p>
+<p><label for="id_book_set-1-title">Title:</label> <input id="id_book_set-1-title" type="text" name="book_set-1-title" maxlength="100" /><input type="hidden" name="book_set-1-author" value="1" id="id_book_set-1-author" /><input type="hidden" name="book_set-1-id" id="id_book_set-1-id" /></p>
+<p><label for="id_book_set-2-title">Title:</label> <input id="id_book_set-2-title" type="text" name="book_set-2-title" maxlength="100" /><input type="hidden" name="book_set-2-author" value="1" id="id_book_set-2-author" /><input type="hidden" name="book_set-2-id" id="id_book_set-2-id" /></p>
 
 >>> data = {
 ...     'book_set-TOTAL_FORMS': '3', # the number of forms rendered
@@ -461,7 +461,7 @@ This is used in the admin for save_as functionality.
 True
 
 >>> new_author = Author.objects.create(name='Charles Baudelaire')
->>> formset.instance = new_author
+>>> formset = AuthorBooksFormSet(data, instance=new_author, save_as_new=True)
 >>> [book for book in formset.save() if book.author.pk == new_author.pk]
 [<Book: Les Fleurs du Mal>, <Book: Le Spleen de Paris>]
 
@@ -470,8 +470,8 @@ Test using a custom prefix on an inline formset.
 >>> formset = AuthorBooksFormSet(prefix="test")
 >>> for form in formset.forms:
 ...     print form.as_p()
-<p><label for="id_test-0-title">Title:</label> <input id="id_test-0-title" type="text" name="test-0-title" maxlength="100" /><input type="hidden" name="test-0-id" id="id_test-0-id" /></p>
-<p><label for="id_test-1-title">Title:</label> <input id="id_test-1-title" type="text" name="test-1-title" maxlength="100" /><input type="hidden" name="test-1-id" id="id_test-1-id" /></p>
+<p><label for="id_test-0-title">Title:</label> <input id="id_test-0-title" type="text" name="test-0-title" maxlength="100" /><input type="hidden" name="test-0-author" id="id_test-0-author" /><input type="hidden" name="test-0-id" id="id_test-0-id" /></p>
+<p><label for="id_test-1-title">Title:</label> <input id="id_test-1-title" type="text" name="test-1-title" maxlength="100" /><input type="hidden" name="test-1-author" id="id_test-1-author" /><input type="hidden" name="test-1-id" id="id_test-1-id" /></p>
 
 # Test a custom primary key ###################################################
 
@@ -493,8 +493,8 @@ We need to ensure that it is displayed
 >>> formset = FormSet(instance=place)
 >>> for form in formset.forms:
 ...     print form.as_p()
-<p><label for="id_owner_set-0-name">Name:</label> <input id="id_owner_set-0-name" type="text" name="owner_set-0-name" maxlength="100" /><input type="hidden" name="owner_set-0-auto_id" id="id_owner_set-0-auto_id" /></p>
-<p><label for="id_owner_set-1-name">Name:</label> <input id="id_owner_set-1-name" type="text" name="owner_set-1-name" maxlength="100" /><input type="hidden" name="owner_set-1-auto_id" id="id_owner_set-1-auto_id" /></p>
+<p><label for="id_owner_set-0-name">Name:</label> <input id="id_owner_set-0-name" type="text" name="owner_set-0-name" maxlength="100" /><input type="hidden" name="owner_set-0-place" value="1" id="id_owner_set-0-place" /><input type="hidden" name="owner_set-0-auto_id" id="id_owner_set-0-auto_id" /></p>
+<p><label for="id_owner_set-1-name">Name:</label> <input id="id_owner_set-1-name" type="text" name="owner_set-1-name" maxlength="100" /><input type="hidden" name="owner_set-1-place" value="1" id="id_owner_set-1-place" /><input type="hidden" name="owner_set-1-auto_id" id="id_owner_set-1-auto_id" /></p>
 
 >>> data = {
 ...     'owner_set-TOTAL_FORMS': '2',
@@ -513,9 +513,9 @@ True
 >>> formset = FormSet(instance=place)
 >>> for form in formset.forms:
 ...     print form.as_p()
-<p><label for="id_owner_set-0-name">Name:</label> <input id="id_owner_set-0-name" type="text" name="owner_set-0-name" value="Joe Perry" maxlength="100" /><input type="hidden" name="owner_set-0-auto_id" value="1" id="id_owner_set-0-auto_id" /></p>
-<p><label for="id_owner_set-1-name">Name:</label> <input id="id_owner_set-1-name" type="text" name="owner_set-1-name" maxlength="100" /><input type="hidden" name="owner_set-1-auto_id" id="id_owner_set-1-auto_id" /></p>
-<p><label for="id_owner_set-2-name">Name:</label> <input id="id_owner_set-2-name" type="text" name="owner_set-2-name" maxlength="100" /><input type="hidden" name="owner_set-2-auto_id" id="id_owner_set-2-auto_id" /></p>
+<p><label for="id_owner_set-0-name">Name:</label> <input id="id_owner_set-0-name" type="text" name="owner_set-0-name" value="Joe Perry" maxlength="100" /><input type="hidden" name="owner_set-0-place" value="1" id="id_owner_set-0-place" /><input type="hidden" name="owner_set-0-auto_id" value="1" id="id_owner_set-0-auto_id" /></p>
+<p><label for="id_owner_set-1-name">Name:</label> <input id="id_owner_set-1-name" type="text" name="owner_set-1-name" maxlength="100" /><input type="hidden" name="owner_set-1-place" value="1" id="id_owner_set-1-place" /><input type="hidden" name="owner_set-1-auto_id" id="id_owner_set-1-auto_id" /></p>
+<p><label for="id_owner_set-2-name">Name:</label> <input id="id_owner_set-2-name" type="text" name="owner_set-2-name" maxlength="100" /><input type="hidden" name="owner_set-2-place" value="1" id="id_owner_set-2-place" /><input type="hidden" name="owner_set-2-auto_id" id="id_owner_set-2-auto_id" /></p>
 
 >>> data = {
 ...     'owner_set-TOTAL_FORMS': '3',
@@ -552,7 +552,7 @@ True
 >>> formset = FormSet(instance=owner)
 >>> for form in formset.forms:
 ...     print form.as_p()
-<p><label for="id_ownerprofile-0-age">Age:</label> <input type="text" name="ownerprofile-0-age" id="id_ownerprofile-0-age" /><input type="hidden" name="ownerprofile-0-owner" id="id_ownerprofile-0-owner" /></p>
+<p><label for="id_ownerprofile-0-age">Age:</label> <input type="text" name="ownerprofile-0-age" id="id_ownerprofile-0-age" /><input type="hidden" name="ownerprofile-0-owner" value="1" id="id_ownerprofile-0-owner" /></p>
 
 >>> data = {
 ...     'ownerprofile-TOTAL_FORMS': '1',
@@ -590,7 +590,7 @@ True
 >>> for form in formset.forms:
 ...     print form.as_p()
 <p><label for="id_location_set-0-lat">Lat:</label> <input id="id_location_set-0-lat" type="text" name="location_set-0-lat" maxlength="100" /></p>
-<p><label for="id_location_set-0-lon">Lon:</label> <input id="id_location_set-0-lon" type="text" name="location_set-0-lon" maxlength="100" /><input type="hidden" name="location_set-0-id" id="id_location_set-0-id" /></p>
+<p><label for="id_location_set-0-lon">Lon:</label> <input id="id_location_set-0-lon" type="text" name="location_set-0-lon" maxlength="100" /><input type="hidden" name="location_set-0-place" value="1" id="id_location_set-0-place" /><input type="hidden" name="location_set-0-id" id="id_location_set-0-id" /></p>
 
 # Foreign keys in parents ########################################
 
@@ -699,7 +699,7 @@ False
 >>> now = form.fields['date_joined'].initial
 >>> print form.as_p()
 <p><label for="id_membership_set-0-date_joined">Date joined:</label> <input type="text" name="membership_set-0-date_joined" value="..." id="id_membership_set-0-date_joined" /><input type="hidden" name="initial-membership_set-0-date_joined" value="..." id="id_membership_set-0-date_joined" /></p>
-<p><label for="id_membership_set-0-karma">Karma:</label> <input type="text" name="membership_set-0-karma" id="id_membership_set-0-karma" /><input type="hidden" name="membership_set-0-id" id="id_membership_set-0-id" /></p>
+<p><label for="id_membership_set-0-karma">Karma:</label> <input type="text" name="membership_set-0-karma" id="id_membership_set-0-karma" /><input type="hidden" name="membership_set-0-person" value="1" id="id_membership_set-0-person" /><input type="hidden" name="membership_set-0-id" id="id_membership_set-0-id" /></p>
 
 # test for validation with callable defaults. Validations rely on hidden fields
 
