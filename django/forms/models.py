@@ -465,7 +465,7 @@ class BaseInlineFormSet(BaseModelFormSet):
             # creating new instances
             form.data[form.add_prefix(self._pk_field.name)] = None
         return form
-
+    
     def get_queryset(self):
         """
         Returns this FormSet's queryset, but restricted to children of

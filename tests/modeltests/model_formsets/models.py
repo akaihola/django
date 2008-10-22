@@ -657,7 +657,6 @@ False
 # Also see bug #8882.
 
 >>> repository = Repository.objects.create(name=u'Test Repo')
->>> print repr(repository)
 >>> FormSet = inlineformset_factory(Repository, Revision, extra=1)
 >>> data = {
 ...     'revision_set-TOTAL_FORMS': '1',
