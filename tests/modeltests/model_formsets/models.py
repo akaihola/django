@@ -96,6 +96,24 @@ class Price(models.Model):
 class MexicanRestaurant(Restaurant):
     serves_tacos = models.BooleanField()
 
+# models for testing unique_together validation when a fk is involved and
+# using inlineformset_factory.
+class Repository(models.Model):
+    name = models.CharField(max_length=25)
+    
+    def __unicode__(self):
+        return self.name
+
+class Revision(models.Model):
+    repository = models.ForeignKey(Repository)
+    revision = models.CharField(max_length=40)
+    
+    class Meta:
+        unique_together = (("repository", "revision"),)
+    
+    def __unicode__(self):
+        return u"%s (%s)" % (self.revision, unicode(self.repository))
+
 # models for testing callable defaults (see bug #7975). If you define a model
 # with a callable default value, you cannot rely on the initial value in a
 # form.
@@ -634,6 +652,36 @@ True
 False
 >>> formset.errors
 [{'__all__': [u'Price with this Price and Quantity already exists.']}]
+
+# unique_together with inlineformset_factory
+# Also see bug #8882.
+
+>>> repository = Repository.objects.create(name=u'Test Repo')
+>>> print repr(repository)
+>>> FormSet = inlineformset_factory(Repository, Revision, extra=1)
+>>> data = {
+...     'revision_set-TOTAL_FORMS': '1',
+...     'revision_set-INITIAL_FORMS': '0',
+...     'revision_set-0-revision': '146239817507f148d448db38840db7c3cbf47c76',
+...     'revision_set-0-DELETE': '',
+... }
+>>> formset = FormSet(data, instance=repository)
+>>> formset.is_valid()
+True
+>>> formset.save()
+[<Revision: 146239817507f148d448db38840db7c3cbf47c76 (Test Repo)>]
+
+# attempt to save the same revision against against the same repo.
+>>> data = {
+...     'revision_set-TOTAL_FORMS': '1',
+...     'revision_set-INITIAL_FORMS': '0',
+...     'revision_set-0-revision': '146239817507f148d448db38840db7c3cbf47c76',
+...     'revision_set-0-DELETE': '',
+... }
+>>> formset = FormSet(data, instance=repository)
+>>> formset.is_valid()
+False
+>>> formset.errors
 
 # Use of callable defaults (see bug #7975).
 
