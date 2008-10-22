@@ -661,6 +661,7 @@ False
 >>> data = {
 ...     'revision_set-TOTAL_FORMS': '1',
 ...     'revision_set-INITIAL_FORMS': '0',
+...     'revision_set-0-repository': repository.pk,
 ...     'revision_set-0-revision': '146239817507f148d448db38840db7c3cbf47c76',
 ...     'revision_set-0-DELETE': '',
 ... }
@@ -674,6 +675,7 @@ True
 >>> data = {
 ...     'revision_set-TOTAL_FORMS': '1',
 ...     'revision_set-INITIAL_FORMS': '0',
+...     'revision_set-0-repository': repository.pk,
 ...     'revision_set-0-revision': '146239817507f148d448db38840db7c3cbf47c76',
 ...     'revision_set-0-DELETE': '',
 ... }
@@ -681,6 +683,7 @@ True
 >>> formset.is_valid()
 False
 >>> formset.errors
+[{'__all__': [u'Revision with this Repository and Revision already exists.']}]
 
 # Use of callable defaults (see bug #7975).
 

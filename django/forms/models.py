@@ -483,6 +483,7 @@ class BaseInlineFormSet(BaseModelFormSet):
         super(BaseInlineFormSet, self).add_fields(form, index)
         if self._pk_field == self.fk:
             form.fields[self._pk_field.name] = IntegerField(required=False, widget=HiddenInput)
+        form.fields[self.fk.name] = InlineForeignKeyField(self.instance, label=form.fields[self.fk.name].label)
 
 def _get_foreign_key(parent_model, model, fk_name=None):
     """
@@ -534,11 +535,6 @@ def inlineformset_factory(parent_model, model, form=ModelForm,
     # enforce a max_num=1 when the foreign key to the parent model is unique.
     if fk.unique:
         max_num = 1
-    if exclude is not None:
-        exclude = list(exclude)
-        exclude.append(fk.name)
-    else:
-        exclude = [fk.name]
     kwargs = {
         'form': form,
         'formfield_callback': formfield_callback,
@@ -556,6 +552,31 @@ def inlineformset_factory(parent_model, model, form=ModelForm,
 
 
 # Fields #####################################################################
+
+class InlineForeignKeyField(Field):
+    """
+    A basic integer field that deals with validating the given value to a
+    given parent instance in an inline.
+    """
+    default_error_messages = {
+        'invalid': _(u'The inline foreign key value must be an integer.'),
+        'invalid_choice': _(u'The inline foreign key did not match the parent instance primary key.'),
+    }
+    
+    def __init__(self, parent_instance, *args, **kwargs):
+        self.parent_instance = parent_instance
+        kwargs["required"] = True
+        kwargs["widget"] = HiddenInput
+        super(InlineForeignKeyField, self).__init__(*args, **kwargs)
+    
+    def clean(self, value):
+        try:
+            value = int(str(value))
+        except (ValueError, TypeError):
+            raise ValidationError(self.error_messages['invalid'])
+        if value != self.parent_instance.pk:
+            raise ValidationError(self.error_message['invalid_choice'])
+        return self.parent_instance
 
 class ModelChoiceIterator(object):
     def __init__(self, field):
