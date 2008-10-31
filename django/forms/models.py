@@ -583,8 +583,9 @@ class InlineForeignKeyField(Field):
         if value in EMPTY_VALUES:
             if self.pk_field:
                 return None
-            # backward compatibility
+            # if there is no value act as we did before.
             return self.parent_instance
+        # ensure the we compare the values as equal types.
         if force_unicode(value) != force_unicode(self.parent_instance.pk):
             raise ValidationError(self.error_messages['invalid_choice'])
         if self.pk_field:
