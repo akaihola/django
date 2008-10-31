@@ -482,7 +482,7 @@ class BaseInlineFormSet(BaseModelFormSet):
     def add_fields(self, form, index):
         super(BaseInlineFormSet, self).add_fields(form, index)
         if self._pk_field == self.fk:
-            form.fields[self._pk_field.name] = InlineForeignKeyField(self.instance, label=form.fields[self._pk_field.name].label, pk_field=True)
+            form.fields[self._pk_field.name] = InlineForeignKeyField(self.instance, pk_field=True)
         else:
             form.fields[self.fk.name] = InlineForeignKeyField(self.instance, label=form.fields[self.fk.name].label)
 
