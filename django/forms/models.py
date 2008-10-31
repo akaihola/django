@@ -3,7 +3,7 @@ Helper functions for creating Form classes from Django models
 and database field objects.
 """
 
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_unicode, force_unicode
 from django.utils.datastructures import SortedDict
 from django.utils.text import get_text_list, capfirst
 from django.utils.translation import ugettext_lazy as _
@@ -567,7 +567,6 @@ class InlineForeignKeyField(Field):
     given parent instance in an inline.
     """
     default_error_messages = {
-        'invalid': _(u'The inline foreign key value must be an integer.'),
         'invalid_choice': _(u'The inline foreign key did not match the parent instance primary key.'),
     }
     
@@ -586,12 +585,8 @@ class InlineForeignKeyField(Field):
                 return None
             # backward compatibility
             return self.parent_instance
-        try:
-            value = int(str(value))
-        except (ValueError, TypeError):
-            raise ValidationError(self.error_messages['invalid'])
-        if value != self.parent_instance.pk:
-            raise ValidationError(self.error_message['invalid_choice'])
+        if force_unicode(value) != force_unicode(self.parent_instance.pk):
+            raise ValidationError(self.error_messages['invalid_choice'])
         if self.pk_field:
             return self.parent_instance.pk
         return self.parent_instance
