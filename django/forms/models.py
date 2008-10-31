@@ -481,9 +481,10 @@ class BaseInlineFormSet(BaseModelFormSet):
 
     def add_fields(self, form, index):
         super(BaseInlineFormSet, self).add_fields(form, index)
-        form.fields[self.fk.name] = InlineForeignKeyField(self.instance, label=form.fields[self.fk.name].label)
         if self._pk_field == self.fk:
-            form.fields[self._pk_field.name] = IntegerField(required=False, widget=HiddenInput)
+            form.fields[self._pk_field.name] = InlineForeignKeyField(self.instance, label=form.fields[self._pk_field.name].label, pk_field=True)
+        else:
+            form.fields[self.fk.name] = InlineForeignKeyField(self.instance, label=form.fields[self.fk.name].label)
 
 def _get_foreign_key(parent_model, model, fk_name=None):
     """
@@ -569,6 +570,7 @@ class InlineForeignKeyField(Field):
     
     def __init__(self, parent_instance, *args, **kwargs):
         self.parent_instance = parent_instance
+        self.pk_field = kwargs.pop("pk_field", False)
         if self.parent_instance is not None:
             kwargs["initial"] = self.parent_instance.pk
         kwargs["required"] = False
@@ -577,6 +579,8 @@ class InlineForeignKeyField(Field):
     
     def clean(self, value):
         if value in EMPTY_VALUES:
+            if self.pk_field:
+                return None
             # backward compatibility
             return self.parent_instance
         try:
@@ -585,6 +589,8 @@ class InlineForeignKeyField(Field):
             raise ValidationError(self.error_messages['invalid'])
         if value != self.parent_instance.pk:
             raise ValidationError(self.error_message['invalid_choice'])
+        if self.pk_field:
+            return self.parent_instance.pk
         return self.parent_instance
 
 class ModelChoiceIterator(object):
