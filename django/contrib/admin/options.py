@@ -620,7 +620,7 @@ class ModelAdmin(BaseModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         "The 'change list' admin view for this model."
-        from django.contrib.admin.views.main import ChangeList, ERROR_FLAG
+        from django.contrib.admin.changelist import ChangeList, ERROR_FLAG
         opts = self.model._meta
         app_label = opts.app_label
         if not self.has_change_permission(request, None):
