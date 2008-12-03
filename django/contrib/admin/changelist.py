@@ -32,20 +32,26 @@ ERROR_FLAG = 'e'
 # Text to display within change-list table cells if the value is blank.
 EMPTY_CHANGELIST_VALUE = '(None)'
 
-class ChangeList(object):
-    def __init__(self, request, model, list_display, list_display_links, list_filter, date_hierarchy, search_fields, list_select_related, list_per_page, model_admin):
-        self.model = model
-        self.opts = model._meta
+class BaseChangeList(object):
+    def __init__(self, **kwargs):
+        self.list_display = kwargs.get("list_display")
+        self.list_display_links = kwargs.get("list_display_links")
+        self.list_filter = kwargs.get("list_filter")
+        self.date_hierarchy = kwargs.get("date_hierarchy")
+        self.search_fields = kwargs.get("search_fields")
+        self.list_select_related = kwargs.get("list_select_related")
+        self.list_per_page = kwargs.get("list_per_page")
+
+class ChangeList(BaseChangeList):
+    def __init__(self, request, **kwargs):
+        self.model = kwargs.pop("model")
+        self.opts = self.model._meta
         self.lookup_opts = self.opts
-        self.root_query_set = model_admin.queryset(request)
-        self.list_display = list_display
-        self.list_display_links = list_display_links
-        self.list_filter = list_filter
-        self.date_hierarchy = date_hierarchy
-        self.search_fields = search_fields
-        self.list_select_related = list_select_related
-        self.list_per_page = list_per_page
-        self.model_admin = model_admin
+        
+        self.model_admin = kwargs.pop("model_admin")
+        self.root_query_set = self.model_admin.queryset(request)
+        
+        super(ChangeList, self).__init__(**kwargs)
 
         # Get search parameters from the query string.
         try:
