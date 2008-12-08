@@ -40,13 +40,13 @@ class BaseChangeList(object):
         
         self.root_query_set = kwargs.get("root_query_set", self.model._default_manager.all())
         
-        self.list_display = kwargs.get("list_display")
-        self.list_display_links = kwargs.get("list_display_links")
-        self.list_filter = kwargs.get("list_filter")
+        self.list_display = kwargs.get("list_display", ("__unicode__",))
+        self.list_display_links = kwargs.get("list_display_links", ())
+        self.list_filter = kwargs.get("list_filter", ())
         self.date_hierarchy = kwargs.get("date_hierarchy")
-        self.search_fields = kwargs.get("search_fields")
-        self.list_select_related = kwargs.get("list_select_related")
-        self.list_per_page = kwargs.get("list_per_page")
+        self.search_fields = kwargs.get("search_fields", ())
+        self.list_select_related = kwargs.get("list_select_related", False)
+        self.list_per_page = kwargs.get("list_per_page", 100)
 
 class ChangeList(BaseChangeList):
     def __init__(self, request, **kwargs):
