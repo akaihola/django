@@ -47,13 +47,11 @@ class BaseChangeList(object):
         self.search_fields = kwargs.get("search_fields", ())
         self.list_select_related = kwargs.get("list_select_related", False)
         self.list_per_page = kwargs.get("list_per_page", 100)
+        self.ordering = kwargs.get("ordering")
 
 class ChangeList(BaseChangeList):
     def __init__(self, model, request, **kwargs):
-        self.model_admin = kwargs.pop("model_admin")
-        defaults = {
-            "root_query_set": self.model_admin.queryset(request),
-        }
+        defaults = {}
         defaults.update(kwargs)
         super(ChangeList, self).__init__(model, **defaults)
 
@@ -86,7 +84,7 @@ class ChangeList(BaseChangeList):
         if self.list_filter:
             filter_fields = [self.lookup_opts.get_field(field_name) for field_name in self.list_filter]
             for f in filter_fields:
-                spec = FilterSpec.create(f, request, self.params, self.model, self.model_admin)
+                spec = FilterSpec.create(f, request, self.params, self.model, self.root_query_set)
                 if spec and spec.has_output():
                     filter_specs.append(spec)
         return filter_specs, bool(filter_specs)
@@ -142,11 +140,11 @@ class ChangeList(BaseChangeList):
 
     def get_ordering(self):
         lookup_opts, params = self.lookup_opts, self.params
-        # For ordering, first check the "ordering" parameter in the admin
-        # options, then check the object's default ordering. If neither of
-        # those exist, order descending by ID by default. Finally, look for
+        # For ordering, first check if "ordering" is a present on self, then
+        # check the object's default ordering. If neither of those exist,
+        # order descending by ID by default. Finally, look for
         # manually-specified ordering from the query string.
-        ordering = self.model_admin.ordering or lookup_opts.ordering or ['-' + lookup_opts.pk.name]
+        ordering = self.ordering or lookup_opts.ordering or ['-' + lookup_opts.pk.name]
 
         if ordering[0].startswith('-'):
             order_field, order_type = ordering[0][1:], 'desc'

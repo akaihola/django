@@ -634,7 +634,8 @@ class ModelAdmin(BaseModelAdmin):
                 "search_fields": self.search_fields,
                 "list_select_related": self.list_select_related,
                 "list_per_page": self.list_per_page,
-                "model_admin": self,
+                "root_query_set": self.queryset(request),
+                "ordering": self.ordering,
             })
         except IncorrectLookupParameters:
             # Wacky lookup parameters were given, so redirect to the main

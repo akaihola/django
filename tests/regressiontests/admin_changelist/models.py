@@ -5,5 +5,7 @@ __test__ = {"API_TESTS": """
 
 >>> from django.contrib.admin.changelist import ChangeList
 
+# test ordering
+
 """
 }
