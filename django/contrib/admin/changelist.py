@@ -38,6 +38,8 @@ class BaseChangeList(object):
         self.opts = self.model._meta
         self.lookup_opts = self.opts
         
+        self.root_query_set = kwargs.get("root_query_set", self.model._default_manager.all())
+        
         self.list_display = kwargs.get("list_display")
         self.list_display_links = kwargs.get("list_display_links")
         self.list_filter = kwargs.get("list_filter")
@@ -49,9 +51,11 @@ class BaseChangeList(object):
 class ChangeList(BaseChangeList):
     def __init__(self, request, **kwargs):
         self.model_admin = kwargs.pop("model_admin")
-        self.root_query_set = self.model_admin.queryset(request)
-        
-        super(ChangeList, self).__init__(**kwargs)
+        defaults = {
+            "root_query_set": self.model_admin.queryset(request),
+        }
+        defaults.update(kwargs)
+        super(ChangeList, self).__init__(**defaults)
 
         # Get search parameters from the query string.
         try:
