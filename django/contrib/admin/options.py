@@ -626,8 +626,7 @@ class ModelAdmin(BaseModelAdmin):
         if not self.has_change_permission(request, None):
             raise PermissionDenied
         try:
-            cl = ChangeList(request, **{
-                "model": self.model,
+            cl = ChangeList(self.model, request, **{
                 "list_display": self.list_display,
                 "list_display_links": self.list_display_links,
                 "list_filter": self.list_filter,

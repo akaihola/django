@@ -33,9 +33,9 @@ ERROR_FLAG = 'e'
 EMPTY_CHANGELIST_VALUE = '(None)'
 
 class BaseChangeList(object):
-    def __init__(self, **kwargs):
-        self.model = kwargs.pop("model")
-        self.opts = self.model._meta
+    def __init__(self, model, **kwargs):
+        self.model = model
+        self.opts = model._meta
         self.lookup_opts = self.opts
         
         self.root_query_set = kwargs.get("root_query_set", self.model._default_manager.all())
@@ -49,13 +49,13 @@ class BaseChangeList(object):
         self.list_per_page = kwargs.get("list_per_page", 100)
 
 class ChangeList(BaseChangeList):
-    def __init__(self, request, **kwargs):
+    def __init__(self, model, request, **kwargs):
         self.model_admin = kwargs.pop("model_admin")
         defaults = {
             "root_query_set": self.model_admin.queryset(request),
         }
         defaults.update(kwargs)
-        super(ChangeList, self).__init__(**defaults)
+        super(ChangeList, self).__init__(model, **defaults)
 
         # Get search parameters from the query string.
         try:
