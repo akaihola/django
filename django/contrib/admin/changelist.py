@@ -48,6 +48,19 @@ class BaseChangeList(object):
         self.list_select_related = kwargs.get("list_select_related", False)
         self.list_per_page = kwargs.get("list_per_page", 100)
         self.ordering = kwargs.get("ordering")
+        
+    def get_ordering(self):
+        # For ordering, first check if "ordering" is a present on self, then
+        # check the object's default ordering. If neither of those exist,
+        # order descending by ID by default. Finally, look for
+        # manually-specified ordering from the query string.
+        ordering = self.ordering or lookup_opts.ordering or ["-" + self.lookup_opts.pk.name]
+
+        if ordering[0].startswith("-"):
+            order_field, order_type = ordering[0][1:], "desc"
+        else:
+            order_field, order_type = ordering[0], "asc"
+        return order_field, order_type
 
 class ChangeList(BaseChangeList):
     def __init__(self, model, request, **kwargs):
@@ -139,22 +152,12 @@ class ChangeList(BaseChangeList):
         self.paginator = paginator
 
     def get_ordering(self):
-        lookup_opts, params = self.lookup_opts, self.params
-        # For ordering, first check if "ordering" is a present on self, then
-        # check the object's default ordering. If neither of those exist,
-        # order descending by ID by default. Finally, look for
-        # manually-specified ordering from the query string.
-        ordering = self.ordering or lookup_opts.ordering or ['-' + lookup_opts.pk.name]
-
-        if ordering[0].startswith('-'):
-            order_field, order_type = ordering[0][1:], 'desc'
-        else:
-            order_field, order_type = ordering[0], 'asc'
-        if ORDER_VAR in params:
+        order_field, order_type = super(ChangeList, self).get_ordering()
+        if ORDER_VAR in self.params:
             try:
-                field_name = self.list_display[int(params[ORDER_VAR])]
+                field_name = self.list_display[int(self.params[ORDER_VAR])]
                 try:
-                    f = lookup_opts.get_field(field_name)
+                    f = self.lookup_opts.get_field(field_name)
                 except models.FieldDoesNotExist:
                     # See whether field_name is a name of a non-field
                     # that allows sorting.
@@ -172,8 +175,8 @@ class ChangeList(BaseChangeList):
                     order_field = f.name
             except (IndexError, ValueError):
                 pass # Invalid ordering specified. Just use the default.
-        if ORDER_TYPE_VAR in params and params[ORDER_TYPE_VAR] in ('asc', 'desc'):
-            order_type = params[ORDER_TYPE_VAR]
+        if ORDER_TYPE_VAR in self.params and self.params[ORDER_TYPE_VAR] in ('asc', 'desc'):
+            order_type = self.params[ORDER_TYPE_VAR]
         return order_field, order_type
 
     def get_query_set(self):
