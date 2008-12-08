@@ -48,7 +48,40 @@ class BaseChangeList(object):
         self.list_select_related = kwargs.get("list_select_related", False)
         self.list_per_page = kwargs.get("list_per_page", 100)
         self.ordering = kwargs.get("ordering")
+    
+    def get_results(self, can_show_all=False):
+        paginator = Paginator(self.query_set, self.list_per_page)
+        # Get the number of objects, with admin filters applied.
+        result_count = paginator.count
+
+        # Get the total number of objects, with no admin filters applied.
+        # Perform a slight optimization: Check to see whether any filters were
+        # given. If not, use paginator.hits to calculate the number of objects,
+        # because we've already done paginator.hits and the value is cached.
+        if not self.query_set.query.where:
+            full_result_count = result_count
+        else:
+            full_result_count = self.root_query_set.count()
         
+        can_show_all = result_count <= MAX_SHOW_ALL_ALLOWED
+        multi_page = result_count > self.list_per_page
+
+        # Get the list of objects to display on this page.
+        if (self.show_all and can_show_all) or not multi_page:
+            result_list = list(self.query_set)
+        else:
+            try:
+                result_list = paginator.page(self.page_num + 1).object_list
+            except InvalidPage:
+                result_list = ()
+
+        self.result_count = result_count
+        self.full_result_count = full_result_count
+        self.result_list = result_list
+        self.can_show_all = can_show_all
+        self.multi_page = multi_page
+        self.paginator = paginator
+    
     def get_ordering(self):
         # For ordering, first check if "ordering" is a present on self, then
         # check the object's default ordering. If neither of those exist,
@@ -160,7 +193,7 @@ class ChangeList(BaseChangeList):
         self.order_field, self.order_type = self.get_ordering()
         self.query = request.GET.get(SEARCH_VAR, '')
         self.query_set = self.get_query_set()
-        self.get_results(request)
+        self.get_results()
         self.title = (self.is_popup and ugettext('Select %s') % force_unicode(self.opts.verbose_name) or ugettext('Select %s to change') % force_unicode(self.opts.verbose_name))
         self.filter_specs, self.has_filters = self.get_filters(request)
         self.pk_attname = self.lookup_opts.pk.attname
@@ -190,39 +223,6 @@ class ChangeList(BaseChangeList):
             else:
                 p[k] = v
         return '?%s' % urlencode(p)
-
-    def get_results(self, request):
-        paginator = Paginator(self.query_set, self.list_per_page)
-        # Get the number of objects, with admin filters applied.
-        result_count = paginator.count
-
-        # Get the total number of objects, with no admin filters applied.
-        # Perform a slight optimization: Check to see whether any filters were
-        # given. If not, use paginator.hits to calculate the number of objects,
-        # because we've already done paginator.hits and the value is cached.
-        if not self.query_set.query.where:
-            full_result_count = result_count
-        else:
-            full_result_count = self.root_query_set.count()
-
-        can_show_all = result_count <= MAX_SHOW_ALL_ALLOWED
-        multi_page = result_count > self.list_per_page
-
-        # Get the list of objects to display on this page.
-        if (self.show_all and can_show_all) or not multi_page:
-            result_list = list(self.query_set)
-        else:
-            try:
-                result_list = paginator.page(self.page_num+1).object_list
-            except InvalidPage:
-                result_list = ()
-
-        self.result_count = result_count
-        self.full_result_count = full_result_count
-        self.result_list = result_list
-        self.can_show_all = can_show_all
-        self.multi_page = multi_page
-        self.paginator = paginator
 
     def get_ordering(self):
         order_field, order_type = super(ChangeList, self).get_ordering()
