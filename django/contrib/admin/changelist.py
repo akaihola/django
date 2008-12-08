@@ -34,6 +34,10 @@ EMPTY_CHANGELIST_VALUE = '(None)'
 
 class BaseChangeList(object):
     def __init__(self, **kwargs):
+        self.model = kwargs.pop("model")
+        self.opts = self.model._meta
+        self.lookup_opts = self.opts
+        
         self.list_display = kwargs.get("list_display")
         self.list_display_links = kwargs.get("list_display_links")
         self.list_filter = kwargs.get("list_filter")
@@ -44,10 +48,6 @@ class BaseChangeList(object):
 
 class ChangeList(BaseChangeList):
     def __init__(self, request, **kwargs):
-        self.model = kwargs.pop("model")
-        self.opts = self.model._meta
-        self.lookup_opts = self.opts
-        
         self.model_admin = kwargs.pop("model_admin")
         self.root_query_set = self.model_admin.queryset(request)
         
