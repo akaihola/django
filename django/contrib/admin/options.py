@@ -240,13 +240,8 @@ class ModelAdmin(BaseModelAdmin):
         Returns a QuerySet of all model instances that can be edited by the
         admin site. This is used by changelist_view.
         """
-        qs = self.model._default_manager.get_query_set()
-        # TODO: this should be handled by some parameter to the ChangeList.
-        ordering = self.ordering or () # otherwise we might try to *None, which is bad ;)
-        if ordering:
-            qs = qs.order_by(*ordering)
-        return qs
-
+        return self.model._default_manager.get_query_set()
+        
     def get_fieldsets(self, request, obj=None):
         "Hook for specifying fieldsets for the add form."
         if self.declared_fieldsets:
