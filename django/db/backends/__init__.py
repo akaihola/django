@@ -1,26 +1,44 @@
 try:
-    # Only exists in Python 2.4+
-    from threading import local
-except ImportError:
-    # Import copy of _thread_local.py from Python 2.4
-    from django.utils._threading_local import local
-try:
     set
 except NameError:
     # Python 2.3 compat
     from sets import Set as set
 
+from django.db.pool import ThreadLocalPool
 from django.db.backends import util
 from django.utils import datetime_safe
 
-class BaseDatabaseWrapper(local):
+class ConnectionProxy(object):
+    """
+    ConnectionProxy proxies the BaseDatabaseWrapper.connection to provide
+    a backward compatible interface to dealing with the BaseDatabaseWrapper
+    connection pool.
+    """
+    def __get__(self, instance, instance_type=None):
+        """
+        Get a connection from the connection pool.
+        """
+        if instance.pool.empty():
+            return None
+        return instance.pool.get()
+    
+    def __set__(self, instance, value):
+        """
+        Add a connection to the connection pool.
+        """
+        instance.pool.add(value)
+
+class BaseDatabaseWrapper(object):
     """
     Represents a database connection.
     """
     ops = None
-    def __init__(self, **kwargs):
-        self.connection = None
-        self.queries = []
+    connection = ConnectionProxy()
+    
+    def __init__(self, pool=None, **kwargs):
+        if pool is None:
+            pool = ThreadLocalPool()
+        self.pool = pool
         self.options = kwargs
 
     def _commit(self):
