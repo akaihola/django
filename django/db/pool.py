@@ -35,12 +35,14 @@ class ThreadLocalPool(Pool):
     """
     def __init__(self):
         self.thread = local()
-        self.thread.connection = None
     
     def get(self):
         """
         Get the thread local connection.
         """
+        # ensure the current thread has a connection attribute
+        if not hasattr(self.thread, "connection"):
+            return None
         return self.thread.connection
     
     def add(self, connection):
@@ -54,6 +56,9 @@ class ThreadLocalPool(Pool):
         If there is no thread local connection then this pool is empty
         otherwise it is not empty.
         """
+        # ensure the current thread has a connection attribute
+        if not hasattr(self.thread, "connection"):
+            return True
         if self.thread.connection is None:
             return True
         return False
