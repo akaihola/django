@@ -44,7 +44,8 @@ class ThreadSingletonPoolTestCase(unittest.TestCase):
             t.join(1)
         # ensure all connections were unique
         self.assertEquals(len(connections), 2)
-    
+
+class QueuePoolTestCase(unittest.TestCase):
     def test_queue_pool(self):
         connections = set()
         def runner():
