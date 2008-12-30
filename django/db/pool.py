@@ -68,19 +68,19 @@ class QueuePool(Pool):
         super(QueuePool, self).__init__()
         self.max_connections = getattr(settings, "MAX_CONNECTIONS", 5)
         self.available_connections = []
-        self.connections_inuse = {}
+        self.active_connections = {}
     
     def get(self):
-        if currentThread() not in self.connections_inuse and self.available_connections:
-            self.connections_inuse[currentThread()] = self.available_connections.pop()
-        return self.connections_inuse[currentThread()]
+        if currentThread() not in self.active_connections and self.available_connections:
+            self.active_connections[currentThread()] = self.available_connections.pop()
+        return self.active_connections[currentThread()]
     
     def add(self, connection):
         if connection is None:
-            conn = self.connections_inuse.pop(currentThread(), None)
+            conn = self.active_connections.pop(currentThread(), None)
             if conn is not None:
                 self.available_connections.append(conn)
-        self.connections_inuse[currentThread()] = connection
+        self.active_connections[currentThread()] = connection
         
     def empty(self):
-        return not (self.available_connections or self.connections_inuse.get(currentThread()))
+        return not (self.available_connections or self.active_connections.get(currentThread()))
