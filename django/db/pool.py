@@ -72,7 +72,6 @@ class QueuePool(Pool):
     
     def get(self):
         return self.connections_inuse.get(currentThread())
-        
     
     def add(self, connection):
         if connection is None:
@@ -82,4 +81,4 @@ class QueuePool(Pool):
         self.connections_inuse[currentThread()] = connection
         
     def empty(self):
-        return not self.available_connections
+        return not (self.available_connections or self.connections_inuse.get(currentThread()))
