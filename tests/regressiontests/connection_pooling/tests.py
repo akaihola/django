@@ -1,4 +1,10 @@
 
+try:
+    set
+except NameError:
+    # Python 2.3 compat
+    from sets import Set as set
+
 import unittest
 import threading
 
