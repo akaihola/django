@@ -71,7 +71,9 @@ class QueuePool(Pool):
         self.connections_inuse = {}
     
     def get(self):
-        return self.connections_inuse.get(currentThread())
+        if currentThread() not in self.connections_inuse and self.available_connections:
+            self.connections_inuse[currentThread()] = self.available_connections.pop()
+        return self.connections_inuse[currentThread()]
     
     def add(self, connection):
         if connection is None:
