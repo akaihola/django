@@ -4,7 +4,7 @@ except NameError:
     # Python 2.3 compat
     from sets import Set as set
 
-from django.db.pool import ThreadLocalPool
+from django.db.pool import ThreadLocalPool, QueuePool
 from django.db.backends import util
 from django.utils import datetime_safe
 
@@ -37,7 +37,7 @@ class BaseDatabaseWrapper(object):
     
     def __init__(self, pool=None, **kwargs):
         if pool is None:
-            pool = ThreadLocalPool()
+            pool = QueuePool()
         self.pool = pool
         self.options = kwargs
 

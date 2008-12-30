@@ -1,4 +1,4 @@
-
+from django.conf import settings
 try:
     # Only exists in Python 2.4+
     from threading import local
@@ -62,3 +62,21 @@ class ThreadLocalPool(Pool):
         if self.thread.connection is None:
             return True
         return False
+
+class QueuePool(Pool):
+    def __init__(self):
+        super(QueuePool, self).__init__()
+        self.max_connections = getattr(settings, "MAX_CONNECTIONS", 5)
+        self.connections = []
+    
+    def get(self):
+        if len(self.connections) < self.max_connections:
+            return None
+        from random import choice
+        return choice(self.connections)
+    
+    def add(self, connection):
+        self.connections.append(connection)
+        
+    def empty(self):
+        return len(self.connections) < self.max_connections
