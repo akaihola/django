@@ -44,4 +44,17 @@ class ThreadSingletonPoolTestCase(unittest.TestCase):
             t.join(1)
         # ensure all connections were unique
         self.assertEquals(len(connections), 2)
-        
+    
+    def test_queue_pool(self):
+        connections = set()
+        def runner():
+            from django.db import connection
+            # calling connection.cursor() will create a new connection, if
+            # one is not already present
+            connection.cursor()
+            connections.add(connection.pool.get())
+        for x in xrange(2):
+            t = threading.Thread(target=runner)
+            t.start()
+            t.join(1)
+        self.assertEquals(len(connections), 1)
