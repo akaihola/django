@@ -1,10 +1,10 @@
 from django.conf import settings
 try:
     # Only exists in Python 2.4+
-    from threading import local
+    from threading import local, currentThread
 except ImportError:
     # Import copy of _thread_local.py from Python 2.4
-    from django.utils._threading_local import local
+    from django.utils._threading_local import local, currentThread
 
 class Pool(object):
     """
@@ -67,18 +67,19 @@ class QueuePool(Pool):
     def __init__(self):
         super(QueuePool, self).__init__()
         self.max_connections = getattr(settings, "MAX_CONNECTIONS", 5)
-        self.connections = []
+        self.available_connections = []
+        self.connections_inuse = {}
     
     def get(self):
-        if len(self.connections) < self.max_connections:
-            return None
-        from random import choice
-        return choice(self.connections)
+        return self.connections_inuse.get(currentThread())
+        
     
     def add(self, connection):
         if connection is None:
-            return
-        self.connections.append(connection)
+            conn = self.connections_inuse.pop(currentThread(), None)
+            if conn is not None:
+                self.available_connections.append(conn)
+        self.connections_inuse[currentThread()] = connection
         
     def empty(self):
-        return len(self.connections) < self.max_connections
+        return not self.available_connections
