@@ -4,7 +4,7 @@ except NameError:
     # Python 2.3 compat
     from sets import Set as set
 
-from django.db.pool import ThreadLocalPool, QueuePool
+from django.db.pool import ThreadSingletonPool, QueuePool
 from django.db.backends import util
 from django.utils import datetime_safe
 

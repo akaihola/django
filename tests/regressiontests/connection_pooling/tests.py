@@ -8,8 +8,26 @@ except NameError:
 import unittest
 import threading
 
-class ThreadLocalPoolTestCase(unittest.TestCase):
-    def test_thread_singleton_connections(self):
+class ThreadSingletonPoolTestCase(unittest.TestCase):
+    def test_singleton_connection(self):
+        """
+        Ensure the same connection is always used in a thread.
+        """
+        def runner():
+            from django.db import connection
+            connection.cursor()
+            c1 = connection.pool.get()
+            connection.cursor()
+            c2 = connection.pool.get()
+            self.assertEqual(c1, c2)
+        t = threading.Thread(target=runner)
+        t.start()
+        t.join()
+    
+    def test_unique_connections(self):
+        """
+        Ensure different connections are created for each thread.
+        """
         connections = set()
         def runner():
             from django.db import connection
