@@ -4,7 +4,11 @@ except NameError:
     # Python 2.3 compat
     from sets import Set as set
 
+<<<<<<< HEAD:django/db/backends/__init__.py
 from django.db.pool import ThreadSingletonPool
+=======
+from django.db.pool import ThreadLocalPool, QueuePool
+>>>>>>> alex/connection_pooling:django/db/backends/__init__.py
 from django.db.backends import util
 from django.utils import datetime_safe
 
@@ -37,7 +41,7 @@ class BaseDatabaseWrapper(object):
     
     def __init__(self, pool=None, **kwargs):
         if pool is None:
-            pool = ThreadSingletonPool()
+            pool = QueuePool()
         self.pool = pool
         self.options = kwargs
 
