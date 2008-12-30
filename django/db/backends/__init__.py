@@ -4,11 +4,7 @@ except NameError:
     # Python 2.3 compat
     from sets import Set as set
 
-<<<<<<< HEAD:django/db/backends/__init__.py
-from django.db.pool import ThreadSingletonPool
-=======
-from django.db.pool import ThreadLocalPool, QueuePool
->>>>>>> alex/connection_pooling:django/db/backends/__init__.py
+from django.db.pool import ThreadSingletonPool, QueuePool
 from django.db.backends import util
 from django.utils import datetime_safe
 
