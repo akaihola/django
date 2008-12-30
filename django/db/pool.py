@@ -29,9 +29,9 @@ class Pool(object):
     def empty(self):
         raise NotImplemented()
 
-class ThreadLocalPool(Pool):
+class ThreadSingletonPool(Pool):
     """
-    Thread local connection pool. Enforces a single connection per thread.
+    Enforces a single connection per thread.
     """
     def __init__(self):
         self.thread = local()
