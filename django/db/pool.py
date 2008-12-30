@@ -76,6 +76,8 @@ class QueuePool(Pool):
         return choice(self.connections)
     
     def add(self, connection):
+        if connection is None:
+            return
         self.connections.append(connection)
         
     def empty(self):
