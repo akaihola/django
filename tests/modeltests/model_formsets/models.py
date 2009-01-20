@@ -24,6 +24,12 @@ class BetterAuthor(Author):
 class Book(models.Model):
     author = models.ForeignKey(Author)
     title = models.CharField(max_length=100)
+    
+    class Meta:
+        unique_together = (
+            ('author', 'title'),
+        )
+        ordering = ['id']
 
     def __unicode__(self):
         return self.title
@@ -856,4 +862,25 @@ False
 False
 >>> formset._non_form_errors
 [u'You have entered duplicate data for price and quantity, price and quantity should be unique together.']
+
+>>> FormSet = inlineformset_factory(Author, Book, extra=0)
+>>> author = Author.objects.order_by('id')[0]
+>>> book_ids = author.book_set.values_list('id', flat=True)
+>>> data = {
+...     'book_set-TOTAL_FORMS': '2',
+...     'book_set-INITIAL_FORMS': '2',
+...     
+...     'book_set-0-title': 'The 2008 Election',
+...     'book_set-0-author': str(author.id),
+...     'book_set-0-id': str(book_ids[0]),
+...     
+...     'book_set-1-title': 'The 2008 Election',
+...     'book_set-1-author': str(author.id),
+...     'book_set-1-id': str(book_ids[1]),
+... }
+>>> formset = FormSet(data=data, instance=author)
+>>> formset.is_valid()
+False
+>>> formset._non_form_errors
+[u'You have entered duplicate data for title, all titles should be unique.']
 """}
