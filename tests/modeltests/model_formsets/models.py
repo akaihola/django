@@ -846,7 +846,7 @@ True
 >>> formset.is_valid()
 False
 >>> formset._non_form_errors
-[u'You have entered duplicate data for slug, all slugs should be unique.']
+[u'You have entered duplicate data for slug. It should be unique.']
 
 >>> FormSet = modelformset_factory(Price, extra=2)
 >>> data = {
@@ -861,7 +861,7 @@ False
 >>> formset.is_valid()
 False
 >>> formset._non_form_errors
-[u'You have entered duplicate data for price and quantity, price and quantity should be unique together.']
+[u'You have entered duplicate data for price and quantity. They should be unique together.']
 
 >>> FormSet = inlineformset_factory(Author, Book, extra=0)
 >>> author = Author.objects.order_by('id')[0]
@@ -882,5 +882,5 @@ False
 >>> formset.is_valid()
 False
 >>> formset._non_form_errors
-[u'You have entered duplicate data for title, all titles should be unique.']
+[u'You have entered duplicate data for title. It should be unique.']
 """}
