@@ -395,6 +395,59 @@ class BaseModelFormSet(BaseFormSet):
                     form.save_m2m()
             self.save_m2m = save_m2m
         return self.save_existing_objects(commit) + self.save_new_objects(commit)
+    
+    def clean(self):
+        self.validate_unique()
+    
+    def validate_unique(self):
+        from django.db.models.fields import FieldDoesNotExist, Field as ModelField
+        unique_checks = []
+        first_form = self.forms[0]
+        for name, field in first_form.fields.iteritems():
+            try:
+                f = first_form.instance._meta.get_field_by_name(name)[0]
+            except FieldDoesNotExist:
+                continue
+            if not isinstance(f, ModelField):
+                # This is an extra field that happens to have a name that matches, 
+                # for example, a related object accessor for this model.  So 
+                # get_field_by_name found it, but it is not a Field so do not proceed
+                # to use it as if it were.
+                continue
+            if f.unique:
+                unique_checks.append((name,))
+        unique_together = []
+        for unique_together_check in first_form.instance._meta.unique_together:
+            if [f for f in unique_together_check if f in first_form.fields]:
+                unique_together.append(unique_together_check)
+        unique_checks.extend(unique_together)
+        errors = []
+        for unique_check in unique_checks:
+            seen_data = set()
+            for form in self.forms:
+                if not hasattr(form, "cleaned_data"):
+                    continue
+                if [f for f in unique_check if f in form.cleaned_data and form.cleaned_data[f] is not None]:
+                    row_data = tuple([form.cleaned_data[field] for field in unique_check])
+                    if row_data in seen_data:
+                        errors.append(self.get_unique_error_message(unique_check))
+                        break
+                    else:
+                        seen_data.add(row_data)
+        if errors:
+            raise ValidationError(errors)
+    
+    def get_unique_error_message(self, unique_check):
+        if len(unique_check) == 1:
+            return _("You have entered duplicate data for %(field)s. It "
+                "should be unique.") % {
+                    "field": unique_check[0],
+                }
+        else:
+            return _("You have entered duplicate data for %(field)s. They "
+                "should be unique together.") % {
+                    "field": get_text_list(unique_check, _("and")),
+                }
 
     def save_existing_objects(self, commit=True):
         self.changed_objects = []
@@ -488,6 +541,10 @@ class BaseInlineFormSet(BaseModelFormSet):
             # creating new instances
             form.data[form.add_prefix(self._pk_field.name)] = None
         return form
+    
+    def get_unique_error_message(self, unique_check):
+        unique_check = [f for f in unique_check if f != self.fk.name]
+        return super(BaseInlineFormSet, self).get_unique_error_message(unique_check)
 
     def save_new(self, form, commit=True):
         fk_attname = self.fk.get_attname()

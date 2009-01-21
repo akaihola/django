@@ -828,4 +828,32 @@ True
 >>> formset.get_queryset()
 [<Player: Bobby>]
 
+# Prevent duplicates from within the same formset
+>>> FormSet = modelformset_factory(Product, extra=2)
+>>> data = {
+...     'form-TOTAL_FORMS': 2,
+...     'form-INITIAL_FORMS': 0,
+...     'form-0-slug': 'red_car',
+...     'form-1-slug': 'red_car',
+... }
+>>> formset = FormSet(data)
+>>> formset.is_valid()
+False
+>>> formset._non_form_errors
+[u'You have entered duplicate data for slug, all slugs should be unique.']
+
+>>> FormSet = modelformset_factory(Price, extra=2)
+>>> data = {
+...     'form-TOTAL_FORMS': 2,
+...     'form-INITIAL_FORMS': 0,
+...     'form-0-price': '25',
+...     'form-0-quantity': '7',
+...     'form-1-price': '25',
+...     'form-1-quantity': '7',
+... }
+>>> formset = FormSet(data)
+>>> formset.is_valid()
+False
+>>> formset._non_form_errors
+[u'You have entered duplicate data for price and quantity, price and quantity should be unique together.']
 """}
