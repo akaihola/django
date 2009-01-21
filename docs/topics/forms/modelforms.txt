@@ -455,6 +455,22 @@ exclude::
 
 .. _saving-objects-in-the-formset:
 
+Overriding clean() method
+-------------------------
+
+You can override the ``clean()`` method to provide custom validation to
+the whole formset at once. By default, the ``clean()`` method will validate
+that none of the data in the formsets violate the unique constraints on your
+model (both field ``unique`` and model ``unique_together``). To maintain this
+default behavior be sure you call the parent's ``clean()`` method::
+
+    class MyModelFormSet(BaseModelFormSet):
+        def clean(self):
+            super(MyModelFormSet, self).clean()
+            # example custom validation across forms in the formset:
+            for form in self.forms:
+                # your custom formset validation
+
 Saving objects in the formset
 -----------------------------
 
