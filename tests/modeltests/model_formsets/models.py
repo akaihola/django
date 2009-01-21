@@ -863,6 +863,19 @@ False
 >>> formset._non_form_errors
 [u'You have entered duplicate data for price and quantity. They should be unique together.']
 
+# only the price field is specified, this should skip any unique checks since the unique_together is not fulfilled.
+# this will fail with a KeyError if broken.
+>>> FormSet = modelformset_factory(Price, fields=("price",), extra=2)
+>>> data = {
+...     'form-TOTAL_FORMS': '2',
+...     'form-INITIAL_FORMS': '0',
+...     'form-0-price': '24',
+...     'form-1-price': '24',
+... }
+>>> formset = FormSet(data)
+>>> formset.is_valid()
+True
+
 >>> FormSet = inlineformset_factory(Author, Book, extra=0)
 >>> author = Author.objects.order_by('id')[0]
 >>> book_ids = author.book_set.values_list('id', flat=True)

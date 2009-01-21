@@ -418,7 +418,8 @@ class BaseModelFormSet(BaseFormSet):
                 unique_checks.append((name,))
         unique_together = []
         for unique_together_check in first_form.instance._meta.unique_together:
-            if [f for f in unique_together_check if f in first_form.fields]:
+            fields_on_form = [f for f in unique_together_check if f in first_form.fields]
+            if len(fields_on_form) == len(unique_together_check):
                 unique_together.append(unique_together_check)
         unique_checks.extend(unique_together)
         errors = []
