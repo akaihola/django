@@ -291,7 +291,8 @@ class BaseGenericInlineFormSet(BaseModelFormSet):
     ct_field_name = "content_type"
     ct_fk_field_name = "object_id"
 
-    def __init__(self, data=None, files=None, instance=None, save_as_new=None):
+    def __init__(self, data=None, files=None, instance=None,
+                 save_as_new=None, prefix=None):
         opts = self.model._meta
         self.instance = instance
         self.rel_name = '-'.join((
@@ -300,7 +301,7 @@ class BaseGenericInlineFormSet(BaseModelFormSet):
         ))
         super(BaseGenericInlineFormSet, self).__init__(
             queryset=self.get_queryset(), data=data, files=files,
-            prefix=self.rel_name
+            prefix=prefix or self.rel_name
         )
 
     def get_queryset(self):
