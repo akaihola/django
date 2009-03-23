@@ -10,12 +10,12 @@ manually.
 from django.db import models
 
 class Reporter(models.Model):
-    first_name = models.CharField(maxlength=30)
-    last_name = models.CharField(maxlength=30)
+    first_name = models.CharField(max_length=30)
+    last_name = models.CharField(max_length=30)
     email = models.EmailField()
 
-    def __str__(self):
-        return "%s %s" % (self.first_name, self.last_name)
+    def __unicode__(self):
+        return u"%s %s" % (self.first_name, self.last_name)
 
 __test__ = {'API_TESTS':"""
 >>> from django.db import connection, transaction
@@ -25,7 +25,7 @@ from django.conf import settings
 
 building_docs = getattr(settings, 'BUILDING_DOCS', False)
 
-if building_docs or settings.DATABASE_ENGINE != 'mysql':
+if building_docs or settings.DATABASE_ENGINE not in ('mysql', 'mysql_old'):
     __test__['API_TESTS'] += """
 # the default behavior is to autocommit after each save() action
 >>> def create_a_reporter_then_fail(first, last):

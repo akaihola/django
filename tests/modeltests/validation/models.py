@@ -1,5 +1,5 @@
 """
-30. Validation
+31. Validation
 
 This is an experimental feature!
 
@@ -12,12 +12,12 @@ from django.db import models
 
 class Person(models.Model):
     is_child = models.BooleanField()
-    name = models.CharField(maxlength=20)
+    name = models.CharField(max_length=20)
     birthdate = models.DateField()
     favorite_moment = models.DateTimeField()
     email = models.EmailField()
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 
 __test__ = {'API_TESTS':"""
@@ -41,8 +41,8 @@ __test__ = {'API_TESTS':"""
 23
 
 >>> p = Person(**dict(valid_params, id='foo'))
->>> p.validate()
-{'id': ['This value must be an integer.']}
+>>> p.validate()['id']
+[u'This value must be an integer.']
 
 >>> p = Person(**dict(valid_params, id=None))
 >>> p.validate()
@@ -75,8 +75,8 @@ True
 False
 
 >>> p = Person(**dict(valid_params, is_child='foo'))
->>> p.validate()
-{'is_child': ['This value must be either True or False.']}
+>>> p.validate()['is_child']
+[u'This value must be either True or False.']
 
 >>> p = Person(**dict(valid_params, name=u'Jose'))
 >>> p.validate()
@@ -88,7 +88,7 @@ u'Jose'
 >>> p.validate()
 {}
 >>> p.name
-'227'
+u'227'
 
 >>> p = Person(**dict(valid_params, birthdate=datetime.date(2000, 5, 3)))
 >>> p.validate()
@@ -115,8 +115,8 @@ datetime.date(2000, 5, 3)
 datetime.date(2000, 5, 3)
 
 >>> p = Person(**dict(valid_params, birthdate='foo'))
->>> p.validate()
-{'birthdate': ['Enter a valid date in YYYY-MM-DD format.']}
+>>> p.validate()['birthdate']
+[u'Enter a valid date in YYYY-MM-DD format.']
 
 >>> p = Person(**dict(valid_params, favorite_moment=datetime.datetime(2002, 4, 3, 13, 23)))
 >>> p.validate()
@@ -143,7 +143,15 @@ datetime.datetime(2002, 4, 3, 0, 0)
 u'john@example.com'
 
 >>> p = Person(**dict(valid_params, email=22))
->>> p.validate()
-{'email': ['Enter a valid e-mail address.']}
+>>> p.validate()['email']
+[u'Enter a valid e-mail address.']
+
+# Make sure that Date and DateTime return validation errors and don't raise Python errors.
+>>> p = Person(name='John Doe', is_child=True, email='abc@def.com')
+>>> errors = p.validate()
+>>> errors['favorite_moment']
+[u'This field is required.']
+>>> errors['birthdate']
+[u'This field is required.']
 
 """}

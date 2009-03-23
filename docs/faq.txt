@@ -42,7 +42,10 @@ Listen to his music. You'll like it.
 
 Django is pronounced **JANG**-oh. Rhymes with FANG-oh. The "D" is silent.
 
+We've also recorded an `audio clip of the pronunciation`_.
+
 .. _Django Reinhardt: http://en.wikipedia.org/wiki/Django_Reinhardt
+.. _audio clip of the pronunciation: http://red-bean.com/~adrian/django_pronunciation.mp3
 
 Is Django stable?
 -----------------
@@ -63,7 +66,7 @@ at any level -- database servers, caching servers or Web/application servers.
 The framework cleanly separates components such as its database layer and
 application layer. And it ships with a simple-yet-powerful `cache framework`_.
 
-.. _`cache framework`: http://www.djangoproject.com/documentation/cache/
+.. _`cache framework`: ../cache/
 
 Who's behind this?
 ------------------
@@ -104,7 +107,7 @@ Lawrence, Kansas, USA.
 
 `Wilson Miner`_
     Wilson's design-fu makes us all look like rock stars. By day, he's an
-    interactive designer for `Apple`. Don't ask him what he's working on, or
+    interactive designer for `Apple`_. Don't ask him what he's working on, or
     he'll have to kill you. He lives in San Francisco.
 
     On IRC, Wilson goes by ``wilsonian``.
@@ -163,7 +166,7 @@ logical to us.
 We're well aware that there are other awesome Web frameworks out there, and
 we're not averse to borrowing ideas where appropriate. However, Django was
 developed precisely because we were unhappy with the status quo, so please be
-aware that "because <Framework X>" does it is not going to be sufficient reason
+aware that "because <Framework X> does it" is not going to be sufficient reason
 to add a given feature to Django.
 
 Why did you write all of Django from scratch, instead of using other Python libraries?
@@ -191,7 +194,7 @@ Like we said: We're picky.
 
 We've documented our philosophies on the `design philosophies page`_.
 
-.. _design philosophies page: http://www.djangoproject.com/documentation/design_philosophies/
+.. _design philosophies page: ../design_philosophies/
 
 Do you have any of those nifty "screencast" things?
 ---------------------------------------------------
@@ -200,10 +203,6 @@ You can bet your bottom they're on the way. But, since we're still hammering
 out a few points, we want to make sure they reflect the final state of things
 at Django 1.0, not some intermediary step. In other words, we don't want to
 spend a lot of energy creating screencasts yet, because Django APIs will shift.
-
-In the meantime, though, check out this `unofficial Django screencast`_.
-
-.. _unofficial Django screencast: http://www.throwingbeans.org/django_screencasts.html
 
 Is Django a content-management-system (CMS)?
 --------------------------------------------
@@ -227,15 +226,16 @@ When will you release Django 1.0?
 
 Short answer: When we're comfortable with Django's APIs, have added all
 features that we feel are necessary to earn a "1.0" status, and are ready to
-begin maintaining backwards compatibility. 
+begin maintaining backwards compatibility.
 
-The merging of Django's `magic-removal branch`_ went a long way toward Django
-1.0.
+The merging of Django's `Queryset Refactor branch`_ went a long way toward Django
+1.0. Merging the `Newforms Admin branch` will be another important step.
 
 Of course, you should note that `quite a few production sites`_ use Django in
 its current status. Don't let the lack of a 1.0 turn you off.
 
-.. _magic-removal branch: http://code.djangoproject.com/wiki/RemovingTheMagic
+.. _Queryset Refactor branch: http://code.djangoproject.com/wiki/QuerysetRefactorBranch
+.. _Newforms Admin branch: http://code.djangoproject.com/wiki/NewformsAdminBranch
 .. _quite a few production sites: http://code.djangoproject.com/wiki/DjangoPoweredSites
 
 How can I download the Django documentation to read it offline?
@@ -260,7 +260,9 @@ Where can I find Django developers for hire?
 Consult our `developers for hire page`_ for a list of Django developers who
 would be happy to help you.
 
-You might also be interested in posting a job to http://www.gypsyjobs.com/ .
+You might also be interested in posting a job to http://djangogigs.com/ .
+If you want to find Django-capable people in your local area, try
+http://djangopeople.net/ .
 
 .. _developers for hire page: http://code.djangoproject.com/wiki/DevelopersForHire
 
@@ -277,9 +279,9 @@ How do I get started?
        run into trouble.
 
 .. _`Download the code`: http://www.djangoproject.com/download/
-.. _`installation guide`: http://www.djangoproject.com/documentation/install/
-.. _tutorial:  http://www.djangoproject.com/documentation/tutorial1/
-.. _documentation: http://www.djangoproject.com/documentation/
+.. _`installation guide`: ../install/
+.. _tutorial:  ../tutorial01/
+.. _documentation: ../
 .. _ask questions: http://www.djangoproject.com/community/
 
 How do I fix the "install a later version of setuptools" error?
@@ -301,7 +303,7 @@ means it can run on a variety of server platforms.
 
 If you want to use Django with a database, which is probably the case, you'll
 also need a database engine. PostgreSQL_ is recommended, because we're
-PostgreSQL fans, and MySQL_ and `SQLite 3`_ are also supported.
+PostgreSQL fans, and MySQL_, `SQLite 3`_, and Oracle_ are also supported.
 
 .. _Python: http://www.python.org/
 .. _Apache 2: http://httpd.apache.org/
@@ -310,6 +312,7 @@ PostgreSQL fans, and MySQL_ and `SQLite 3`_ are also supported.
 .. _PostgreSQL: http://www.postgresql.org/
 .. _MySQL: http://www.mysql.com/
 .. _`SQLite 3`: http://www.sqlite.org/
+.. _Oracle: http://www.oracle.com/
 
 Do I lose anything by using Python 2.3 versus newer Python versions, such as Python 2.5?
 ----------------------------------------------------------------------------------------
@@ -328,8 +331,9 @@ Do I have to use mod_python?
 
 Although we recommend mod_python for production use, you don't have to use it,
 thanks to the fact that Django uses an arrangement called WSGI_. Django can
-talk to any WSGI-enabled server. The most common non-mod_python deployment
-setup is FastCGI. See `How to use Django with FastCGI`_ for full information.
+talk to any WSGI-enabled server. Other non-mod_python deployment setups are
+FastCGI, SCGI or AJP. See `How to use Django with FastCGI, SCGI or AJP`_ for
+full information.
 
 Also, see the `server arrangements wiki page`_ for other deployment strategies.
 
@@ -337,7 +341,7 @@ If you just want to play around and develop things on your local computer, use
 the development Web server that comes with Django. Things should Just Work.
 
 .. _WSGI: http://www.python.org/peps/pep-0333.html
-.. _How to use Django with FastCGI: http://www.djangoproject.com/documentation/fastcgi/
+.. _How to use Django with FastCGI, SCGI or AJP: ../fastcgi/
 .. _server arrangements wiki page: http://code.djangoproject.com/wiki/ServerArrangements
 
 How do I install mod_python on Windows?
@@ -352,7 +356,7 @@ How do I install mod_python on Windows?
       working`_.
 
 .. _`win32 build of mod_python for Python 2.4`: http://www.lehuen.com/nicolas/index.php/2005/02/21/39-win32-build-of-mod_python-314-for-python-24
-.. _`Django on Windows howto`: http://thinkhole.org/wp/2006/04/03/django-on-windows-howto/
+.. _`Django on Windows howto`: http://thinkhole.org/wp/django-on-windows/
 .. _`Running mod_python on Apache on Windows2000`: http://groups-beta.google.com/group/comp.lang.python/msg/139af8c83a5a9d4f
 .. _`guide to getting mod_python working`: http://www.dscpl.com.au/articles/modpython-001.html
 
@@ -381,9 +385,9 @@ Why do I get an error about importing DJANGO_SETTINGS_MODULE?
 Make sure that:
 
     * The environment variable DJANGO_SETTINGS_MODULE is set to a fully-qualified
-      Python module (i.e. "mysite.settings.main").
+      Python module (i.e. "mysite.settings").
 
-    * Said module is on ``sys.path`` (``import mysite.settings.main`` should work).
+    * Said module is on ``sys.path`` (``import mysite.settings`` should work).
 
     * The module doesn't contain syntax errors (of course).
 
@@ -464,7 +468,7 @@ Can I use Django with a pre-existing database?
 
 Yes. See `Integrating with a legacy database`_.
 
-.. _`Integrating with a legacy database`: http://www.djangoproject.com/documentation/legacy_databases/
+.. _`Integrating with a legacy database`: ../legacy_databases/
 
 If I make changes to a model, how do I update the database?
 -----------------------------------------------------------
@@ -511,7 +515,7 @@ type, create an initial data file and put something like this in it::
 As explained in the `SQL initial data file`_ documentation, this SQL file can
 contain arbitrary SQL, so you can make any sorts of changes you need to make.
 
-.. _SQL initial data file: http://www.djangoproject.com/documentation/model_api/#providing-initial-sql-data
+.. _SQL initial data file: ../model-api/#providing-initial-sql-data
 
 Why is Django leaking memory?
 -----------------------------
@@ -592,7 +596,7 @@ My admin-site CSS and images showed up fine using the development server, but th
 See `serving the admin files`_ in the "How to use Django with mod_python"
 documentation.
 
-.. _serving the admin files: http://www.djangoproject.com/documentation/modpython/#serving-the-admin-files
+.. _serving the admin files: ../modpython/#serving-the-admin-files
 
 My "list_filter" contains a ManyToManyField, but the filter doesn't display.
 ----------------------------------------------------------------------------
@@ -630,7 +634,7 @@ site is built using semantic HTML and plenty of CSS hooks, so any changes you'd
 like to make should be possible by editing the stylesheet. We've got a
 `guide to the CSS used in the admin`_ to get you started.
 
-.. _`guide to the CSS used in the admin`: http://www.djangoproject.com/documentation/admin_css/
+.. _`guide to the CSS used in the admin`: ../admin_css/
 
 How do I create users without having to edit password hashes?
 -------------------------------------------------------------
@@ -640,7 +644,82 @@ development version, where this problem was fixed on Aug. 4, 2006.
 
 You can also use the Python API. See `creating users`_ for full info.
 
-.. _creating users: http://www.djangoproject.com/documentation/authentication/#creating-users
+.. _creating users: ../authentication/#creating-users
+
+Getting help
+============
+
+How do I do X? Why doesn't Y work? Where can I go to get help?
+--------------------------------------------------------------
+
+If this FAQ doesn't contain an answer to your question, you might want to
+try the `django-users mailing list`_. Feel free to ask any question related
+to installing, using, or debugging Django.
+
+If you prefer IRC, the `#django IRC channel`_ on the Freenode IRC network is an
+active community of helpful individuals who may be able to solve your problem.
+
+.. _`django-users mailing list`: http://groups.google.com/group/django-users
+.. _`#django IRC channel`: irc://irc.freenode.net/django
+
+Why hasn't my message appeared on django-users?
+-----------------------------------------------
+
+django-users_ has a lot of subscribers. This is good for the community, as
+it means many people are available to contribute answers to questions.
+Unfortunately, it also means that django-users_ is an attractive target for
+spammers.
+
+In order to combat the spam problem, when you join the django-users_ mailing
+list, we manually moderate the first message you send to the list. This means
+that spammers get caught, but it also means that your first question to the
+list might take a little longer to get answered. We apologize for any
+inconvenience that this policy may cause.
+
+.. _django-users: http://groups.google.com/group/django-users
+
+Nobody on django-users answered my question! What should I do?
+--------------------------------------------------------------
+
+Try making your question more specific, or provide a better example of your
+problem.
+
+As with most open-source mailing lists, the folks on django-users_ are
+volunteers. If nobody has answered your question, it may be because nobody
+knows the answer, it may be because nobody can understand the question, or it
+may be that everybody that can help is busy. One thing you might try is to ask
+the question on IRC -- visit the `#django IRC channel`_ on the Freenode IRC
+network.
+
+You might notice we have a second mailing list, called django-developers_ --
+but please don't e-mail support questions to this mailing list. This list is
+for discussion of the development of Django itself. Asking a tech support
+question there is considered quite impolite.
+
+.. _django-developers: http://groups.google.com/group/django-developers
+
+I think I've found a bug! What should I do?
+-------------------------------------------
+
+Detailed instructions on how to handle a potential bug can be found in our
+`Guide to contributing to Django`_.
+
+.. _`Guide to contributing to Django`: ../contributing/#reporting-bugs
+
+I think I've found a security problem! What should I do?
+--------------------------------------------------------
+
+If you think you've found a security problem with Django, please send a message
+to security@djangoproject.com. This is a private list only open to long-time,
+highly trusted Django developers, and its archives are not publicly readable.
+
+Due to the sensitive nature of security issues, we ask that if you think you
+have found a security problem, *please* don't send a message to one of the
+public mailing lists. Django has a `policy for handling security issues`_;
+while a defect is outstanding, we would like to minimize any damage that
+could be inflicted through public knowledge of that defect.
+
+.. _`policy for handling security issues`: ../contributing/#reporting-security-issues
 
 Contributing code
 =================
@@ -651,7 +730,7 @@ How can I get started contributing code to Django?
 Thanks for asking! We've written an entire document devoted to this question.
 It's titled `Contributing to Django`_.
 
-.. _Contributing to Django: http://www.djangoproject.com/documentation/contributing/
+.. _`Contributing to Django`: ../contributing/
 
 I submitted a bug fix in the ticket system several weeks ago. Why are you ignoring my patch?
 --------------------------------------------------------------------------------------------
@@ -662,6 +741,11 @@ It's important to understand there is a difference between "a ticket is being
 ignored" and "a ticket has not been attended to yet." Django's ticket system
 contains hundreds of open tickets, of various degrees of impact on end-user
 functionality, and Django's developers have to review and prioritize.
+
+On top of that: the people who work on Django are all volunteers. As a result,
+the amount of time that we have to work on the framework is limited and will
+vary from week to week depending on our spare time. If we're busy, we may not
+be able to spend as much time on Django as we might want.
 
 Besides, if your feature request stands no chance of inclusion in Django, we
 won't ignore it -- we'll just close the ticket. So if your ticket is still

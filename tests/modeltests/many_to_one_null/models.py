@@ -8,19 +8,19 @@ To define a many-to-one relationship that can have a null foreign key, use
 from django.db import models
 
 class Reporter(models.Model):
-    name = models.CharField(maxlength=30)
+    name = models.CharField(max_length=30)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.name
 
 class Article(models.Model):
-    headline = models.CharField(maxlength=100)
+    headline = models.CharField(max_length=100)
     reporter = models.ForeignKey(Reporter, null=True)
 
     class Meta:
         ordering = ('headline',)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.headline
 
 __test__ = {'API_TESTS':"""
@@ -78,6 +78,11 @@ None
 
 # To retrieve the articles with no reporters set, use "reporter__isnull=True".
 >>> Article.objects.filter(reporter__isnull=True)
+[<Article: Third>]
+
+# We can achieve the same thing by filtering for the case where the reporter is
+# None.
+>>> Article.objects.filter(reporter=None)
 [<Article: Third>]
 
 # Set the reporter for the Third article

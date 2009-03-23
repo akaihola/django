@@ -1,19 +1,31 @@
+# coding: utf-8
 """
 1. Bare-bones model
 
 This is a basic model with only two non-primary-key fields.
 """
+# Python 2.3 doesn't have set as a builtin
+try:
+    set
+except NameError:
+    from sets import Set as set
+
+# Python 2.3 doesn't have sorted()
+try:
+    sorted
+except NameError:
+    from django.utils.itercompat import sorted
 
 from django.db import models
 
 class Article(models.Model):
-    headline = models.CharField(maxlength=100, default='Default headline')
+    headline = models.CharField(max_length=100, default='Default headline')
     pub_date = models.DateTimeField()
 
     class Meta:
         ordering = ('pub_date','headline')
-        
-    def __str__(self):
+
+    def __unicode__(self):
         return self.headline
 
 __test__ = {'API_TESTS': """
@@ -30,6 +42,11 @@ __test__ = {'API_TESTS': """
 
 # Now it has an ID. Note it's a long integer, as designated by the trailing "L".
 >>> a.id
+1L
+
+# Models have a pk property that is an alias for the primary key attribute (by
+# default, the 'id' attribute).
+>>> a.pk
 1L
 
 # Access database columns via Python attributes.
@@ -146,7 +163,7 @@ TypeError: 'foo' is an invalid keyword argument for this function
 >>> a6 = Article(pub_date=datetime(2005, 7, 31))
 >>> a6.save()
 >>> a6.headline
-'Default headline'
+u'Default headline'
 
 # For DateTimeFields, Django saves as much precision (in seconds) as you
 # give it.
@@ -246,6 +263,19 @@ datetime.datetime(2005, 7, 28, 0, 0)
 >>> (s1 | s2 | s3)[::2]
 [<Article: Area woman programs in Python>, <Article: Third article>]
 
+# Slicing works with longs.
+>>> Article.objects.all()[0L]
+<Article: Area woman programs in Python>
+>>> Article.objects.all()[1L:3L]
+[<Article: Second article>, <Article: Third article>]
+>>> s3 = Article.objects.filter(id__exact=3)
+>>> (s1 | s2 | s3)[::2L]
+[<Article: Area woman programs in Python>, <Article: Third article>]
+
+# And can be mixed with ints.
+>>> Article.objects.all()[1:3L]
+[<Article: Second article>, <Article: Third article>]
+
 # Slices (without step) are lazy:
 >>> Article.objects.all()[0:5].filter()
 [<Article: Area woman programs in Python>, <Article: Second article>, <Article: Third article>, <Article: Article 6>, <Article: Default headline>]
@@ -268,11 +298,9 @@ datetime.datetime(2005, 7, 28, 0, 0)
 >>> Article.objects.all()[2:][2:3]
 [<Article: Default headline>]
 
-# Note that you can't use 'offset' without 'limit' (on some dbs), so this doesn't work:
->>> Article.objects.all()[2:]
-Traceback (most recent call last):
-    ...
-AssertionError: 'offset' is not allowed without 'limit'
+# Using an offset without a limit is also possible.
+>>> Article.objects.all()[5:]
+[<Article: Fourth article>, <Article: Article 7>, <Article: Updated article 8>]
 
 # Also, once you have sliced you can't filter, re-order or combine
 >>> Article.objects.all()[0:5].filter(id=1)
@@ -319,7 +347,6 @@ AttributeError: Manager isn't accessible via Article instances
 >>> Article.objects.filter(id__lte=4).delete()
 >>> Article.objects.all()
 [<Article: Article 6>, <Article: Default headline>, <Article: Article 7>, <Article: Updated article 8>]
-
 """}
 
 from django.conf import settings
@@ -352,10 +379,42 @@ __test__['API_TESTS'] += """
 >>> a101.save()
 >>> a101 = Article.objects.get(pk=101)
 >>> a101.headline
-'Article 101'
+u'Article 101'
 
 # You can create saved objects in a single step
 >>> a10 = Article.objects.create(headline="Article 10", pub_date=datetime(2005, 7, 31, 12, 30, 45))
 >>> Article.objects.get(headline="Article 10")
 <Article: Article 10>
+
+# Edge-case test: A year lookup should retrieve all objects in the given
+year, including Jan. 1 and Dec. 31.
+>>> a11 = Article.objects.create(headline='Article 11', pub_date=datetime(2008, 1, 1))
+>>> a12 = Article.objects.create(headline='Article 12', pub_date=datetime(2008, 12, 31, 23, 59, 59, 999999))
+>>> Article.objects.filter(pub_date__year=2008)
+[<Article: Article 11>, <Article: Article 12>]
+
+# Unicode data works, too.
+>>> a = Article(headline=u'\u6797\u539f \u3081\u3050\u307f', pub_date=datetime(2005, 7, 28))
+>>> a.save()
+>>> Article.objects.get(pk=a.id).headline
+u'\u6797\u539f \u3081\u3050\u307f'
+
+# Model instances have a hash function, so they can be used in sets or as
+# dictionary keys. Two models compare as equal if their primary keys are equal.
+>>> s = set([a10, a11, a12])
+>>> Article.objects.get(headline='Article 11') in s
+True
+
+# The 'select' argument to extra() supports names with dashes in them, as long
+# as you use values().
+>>> dicts = Article.objects.filter(pub_date__year=2008).extra(select={'dashed-value': '1'}).values('headline', 'dashed-value')
+>>> [sorted(d.items()) for d in dicts]
+[[('dashed-value', 1), ('headline', u'Article 11')], [('dashed-value', 1), ('headline', u'Article 12')]]
+
+# If you use 'select' with extra() and names containing dashes on a query
+# that's *not* a values() query, those extra 'select' values will silently be
+# ignored.
+>>> articles = Article.objects.filter(pub_date__year=2008).extra(select={'dashed-value': '1', 'undashedvalue': '2'})
+>>> articles[0].undashedvalue
+2
 """

@@ -67,6 +67,13 @@ particular:
       likely to get lost. If a particular ticket is controversial, please move
       discussion to `django-developers`_.
 
+    * **Don't** post to django-developers just to announce that you have filed
+      a bug report. All the tickets are mailed to another list
+      (`django-updates`_), which is tracked by developers and triagers, so we
+      see them as they are filed.
+
+.. _django-updates: http://groups.google.com/group/django-updates
+
 Reporting security issues
 =========================
 
@@ -105,6 +112,63 @@ Submitting patches
 We're always grateful for patches to Django's code. Indeed, bug reports with
 associated patches will get fixed *far* more quickly than those without patches.
 
+"Claiming" tickets
+------------------
+
+In an open-source project with hundreds of contributors around the world, it's
+important to manage communication efficiently so that work doesn't get
+duplicated and contributors can be as effective as possible. Hence, our policy
+is for contributors to "claim" tickets in order to let other developers know
+that a particular bug or feature is being worked on.
+
+If you have identified a contribution you want to make and you're capable of
+fixing it (as measured by your coding ability, knowledge of Django internals
+and time availability), claim it by following these steps:
+
+    * `Create an account`_ to use in our ticket system.
+    * If a ticket for this issue doesn't exist yet, create one in our
+      `ticket tracker`_.
+    * If a ticket for this issue already exists, make sure nobody else has
+      claimed it. To do this, look at the "Assigned to" section of the ticket.
+      If it's assigned to "nobody," then it's available to be claimed.
+      Otherwise, somebody else is working on this ticket, and you either find
+      another bug/feature to work on, or contact the developer working on the
+      ticket to offer your help.
+    * Log into your account, if you haven't already, by clicking "Login" in the
+      upper right of the ticket page.
+    * Claim the ticket by clicking the radio button next to "Accept ticket"
+      near the bottom of the page, then clicking "Submit changes."
+
+.. _Create an account: http://www.djangoproject.com/accounts/register/
+
+Ticket claimers' responsibility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Once you've claimed a ticket, you have a responsibility to work on that ticket
+in a reasonably timely fashion. If you don't have time to work on it, either
+unclaim it or don't claim it in the first place!
+
+Ticket triagers go through the list of claimed tickets from time to
+time, checking whether any progress has been made. If there's no sign of
+progress on a particular claimed ticket for a week or two, a triager may ask
+you to relinquish the ticket claim so that it's no longer monopolized and
+somebody else can claim it.
+
+If you've claimed a ticket and it's taking a long time (days or weeks) to code,
+keep everybody updated by posting comments on the ticket. If you don't provide
+regular updates, and you don't respond to a request for a progress report,
+your claim on the ticket may be revoked. As always, more communication is
+better than less communication!
+
+Which tickets should be claimed?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Of course, going through the steps of claiming tickets is overkill in some
+cases. In the case of small changes, such as typos in the documentation or
+small bugs that will only take a few minutes to fix, you don't need to jump
+through the hoops of claiming tickets. Just submit your patch and be done with
+it.
+
 Patch style
 -----------
 
@@ -115,6 +179,11 @@ Patch style
       English than in code. Indentation is the most common example; it's hard to
       read patches when the only difference in code is that it's indented.
 
+    * When creating patches, always run ``svn diff`` from the top-level
+      ``trunk`` directory -- i.e., the one that contains ``django``, ``docs``,
+      ``tests``, ``AUTHORS``, etc. This makes it easy for other people to apply
+      your patches.
+
     * Attach patches to a ticket in the `ticket tracker`_, using the "attach file"
       button. Please *don't* put the patch in the ticket description or comment
       unless it's a single line patch.
@@ -122,9 +191,9 @@ Patch style
     * Name the patch file with a ``.diff`` extension; this will let the ticket
       tracker apply correct syntax highlighting, which is quite helpful.
 
-    * Put the prefix "[patch] " before the title of your ticket. This will make
-      it obvious that the ticket includes a patch, and it will add the ticket
-      to the `list of tickets with patches`_.
+    * Check the "Has patch" box on the ticket details. This will make it
+      obvious that the ticket includes a patch, and it will add the ticket to
+      the `list of tickets with patches`_.
 
     * The code required to fix a problem or add a feature is an essential part
       of a patch, but it is not the only part. A good patch should also include
@@ -151,24 +220,162 @@ Unfortunately, not all bug reports in the `ticket tracker`_ provide all
 the `required details`_. A number of tickets have patches, but those patches
 don't meet all the requirements of a `good patch`_.
 
-One way to help out is to *triage* bugs that have been reported by other users.
-Pick an open ticket that is missing some details, and try to replicate the
-problem. Fill in the missing pieces of the report. If the ticket doesn't have
-a patch, create one.
+One way to help out is to *triage* bugs that have been reported by other
+users. A couple of dedicated volunteers work on this regularly, but more help
+is always appreciated.
 
-Once you've completed all the missing details on the ticket and you have a
-patch with all the required features, e-mail `django-developers`_. Indicate
-that you have triaged a ticket, and recommend a course of action for dealing
-with that ticket.
+Most of the workflow is based around the concept of a ticket's "triage stage".
+This stage describes where in its lifetime a given ticket is at any time.
+Along with a handful of flags, this field easily tells us what and who each
+ticket is waiting on.
 
-At first, this may require you to be persistent. If you find that your triaged
-ticket still isn't getting attention, occasional polite requests for eyeballs
-to look at your ticket may be necessary. However, as you earn a reputation for
-quality triage work, you should find that it is easier to get the developers'
-attention.
+Since a picture is worth a thousand words, let's start there:
+
+.. image:: http://media.djangoproject.com/img/doc/djangotickets.png
+   :height: 451
+   :width: 590
+   :alt: Django's ticket workflow
+
+We've got two official roles here:
+
+    * Core developers: people with commit access who make the big decisions
+      and write the bulk of the code.
+
+    * Ticket triagers: trusted community members with a proven history of
+      working with the Django community. As a result of this history, they
+      have been entrusted by the core developers to make some of the smaller
+      decisions about tickets.
+
+Second, note the five triage stages:
+
+    1. A ticket starts as "Unreviewed", meaning that nobody has examined
+       the ticket.
+
+    2. "Design decision needed" means "this concept requires a design
+       decision," which should be discussed either in the ticket comments or on
+       `django-developers`_. The "Design decision needed" step will generally
+       only be used for feature requests. It can also be used for issues
+       that *might* be bugs, depending on opinion or interpretation. Obvious
+       bugs (such as crashes, incorrect query results, or non-compliance with a
+       standard) skip this step and move straight to "Accepted".
+
+    3. Once a ticket is ruled to be approved for fixing, it's moved into the
+       "Accepted" stage. This stage is where all the real work gets done.
+
+    4. In some cases, a ticket might get moved to the "Someday/Maybe" state.
+       This means the ticket is an enhancement request that we might consider
+       adding to the framework if an excellent patch is submitted. These
+       tickets are not a high priority.
+
+    5. If a ticket has an associated patch (see below), a triager will review
+       the patch. If the patch is complete, it'll be marked as "ready for
+       checkin" so that a core developer knows to review and check in the
+       patches.
+
+The second part of this workflow involves a set of flags the describe what the
+ticket has or needs in order to be "ready for checkin":
+
+    "Has patch"
+        This means the ticket has an associated patch_. These will be
+        reviewed by the triage team to see if the patch is "good".
+
+    "Needs documentation"
+        This flag is used for tickets with patches that need associated
+        documentation. Complete documentation of features is a prerequisite
+        before we can check a fix into the codebase.
+
+    "Needs tests"
+        This flags the patch as needing associated unit tests. Again, this is a
+        required part of a valid patch.
+
+    "Patch needs improvement"
+        This flag means that although the ticket *has* a patch, it's not quite
+        ready for checkin. This could mean the patch no longer applies
+        cleanly, or that the code doesn't live up to our standards.
+
+A ticket can be resolved in a number of ways:
+
+    "fixed"
+        Used by one of the core developers once a patch has been rolled into
+        Django and the issue is fixed.
+
+    "invalid"
+        Used if the ticket is found to be incorrect. This means that the
+        issue in the ticket is actually the result of a user error, or
+        describes a problem with something other than Django, or isn't
+        a bug report or feature request at all (for example, some new users
+        submit support queries as tickets).
+
+    "wontfix"
+        Used when a core developer decides that this request is not
+        appropriate for consideration in Django. This is usually chosen after
+        discussion in the ``django-developers`` mailing list, and you should
+        feel free to join in when it's something you care about.
+
+    "duplicate"
+        Used when another ticket covers the same issue. By closing duplicate
+        tickets, we keep all the discussion in one place, which helps everyone.
+
+    "worksforme"
+        Used when the the ticket doesn't contain enough detail to replicate
+        the original bug.
+
+If you believe that the ticket was closed in error -- because you're
+still having the issue, or it's popped up somewhere else, or the triagers have
+-- made a mistake, please reopen the ticket and tell us why. Please do not
+reopen tickets that have been marked as "wontfix" by core developers.
 
 .. _required details: `Reporting bugs`_
 .. _good patch: `Patch style`_
+.. _patch: `Submitting patches`_
+
+Triage by the general community
+-------------------------------
+
+Although the core developers and ticket triagers make the big decisions in
+the ticket triage process, there's also a lot that general community
+members can do to help the triage process. In particular, you can help out by:
+
+    * Closing "Unreviewed" tickets as "invalid", "worksforme" or "duplicate."
+
+    * Promoting "Unreviewed" tickets to "Design decision needed" if a design
+      decision needs to be made, or "Accepted" in case of obvious bugs.
+
+    * Correcting the "Needs tests", "Needs documentation", or "Has patch" flags
+      for tickets where they are incorrectly set.
+
+    * Checking that old tickets are still valid. If a ticket hasn't seen
+      any activity in a long time, it's possible that the problem has been
+      fixed but the ticket hasn't yet been closed.
+
+    * Contacting the owners of tickets that have been claimed but have not seen
+      any recent activity. If the owner doesn't respond after a week or so,
+      remove the owner's claim on the ticket.
+
+    * Identifying trends and themes in the tickets. If there a lot of bug reports
+      about a particular part of Django, it may indicate we should consider
+      refactoring that part of the code. If a trend is emerging, you should
+      raise it for discussion (referencing the relevant tickets) on
+      `django-developers`_.
+
+However, we do ask the following of all general community members working in
+the ticket database:
+
+    * Please **don't** close tickets as "wontfix." The core developers will
+      make the final determination of the fate of a ticket, usually after
+      consultation with the community.
+
+    * Please **don't** promote tickets to "Ready for checkin" unless they are
+      *trivial* changes -- for example, spelling mistakes or broken links in
+      documentation.
+
+    * Please **don't** reverse a decision that has been made by a core
+      developer. If you disagree with a discussion that has been made,
+      please post a message to `django-developers`_.
+
+    * Please be conservative in your actions. If you're unsure if you should
+      be making a change, don't make the change -- leave a comment with your
+      concerns on the ticket, or post a message to `django-developers`_.
 
 Submitting and maintaining translations
 =======================================
@@ -182,11 +389,15 @@ incorrect translation, or if you'd like to add a language that isn't yet
 translated, here's what to do:
 
     * Join the `Django i18n mailing list`_ and introduce yourself.
-    * Create and submit translations using the methods described in the
+    * Create translations using the methods described in the
       `i18n documentation`_.
+    * Create a diff of the ``.po`` file against the current Subversion trunk.
+    * Make sure that `` django-admin.py compilemessages -l <lang>`` runs without
+      producing any warnings.
+    * Attach the patch to a ticket in Django's ticket system.
 
 .. _Django i18n mailing list: http://groups.google.com/group/django-i18n/
-.. _i18n documentation: http://www.djangoproject.com/documentation/i18n/
+.. _i18n documentation: ../i18n/
 
 Coding style
 ============
@@ -194,6 +405,10 @@ Coding style
 Please follow these coding standards when writing code for inclusion in Django:
 
     * Unless otherwise specified, follow `PEP 8`_.
+
+      You could use  a tool like `pep8.py`_ to check for some problems in this
+      area, but remember that PEP 8 is only a guide, so respect the style of
+      the surrounding code as a primary goal.
 
     * Use four spaces for indentation.
 
@@ -206,6 +421,31 @@ Please follow these coding standards when writing code for inclusion in Django:
     * Mark all strings for internationalization; see the `i18n documentation`_
       for details.
 
+    * In docstrings, use "action words" such as::
+
+          def foo():
+              """
+              Calculates something and returns the result.
+              """
+              pass
+
+      Here's an example of what not to do::
+
+          def foo():
+              """
+              Calculate something and return the result.
+              """
+              pass
+
+    * Please don't put your name in the code you contribute. Our policy is to
+      keep contributors' names in the ``AUTHORS`` file distributed with Django
+      -- not scattered throughout the codebase itself. Feel free to include a
+      change to the ``AUTHORS`` file in your patch if you make more than a
+      single trivial change.
+
+Template style
+--------------
+
     * In Django template code, put one (and only one) space between the curly
       brackets and the tag contents.
 
@@ -216,6 +456,9 @@ Please follow these coding standards when writing code for inclusion in Django:
       Don't do this::
 
           {{foo}}
+
+View style
+----------
 
     * In Django views, the first parameter in a view function should be called
       ``request``.
@@ -230,9 +473,170 @@ Please follow these coding standards when writing code for inclusion in Django:
           def my_view(req, foo):
               # ...
 
-    * Please don't put your name in the code. While we appreciate all
-      contributions to Django, our policy is not to publish individual
-      developer names in code -- for instance, at the top of Python modules.
+Model style
+-----------
+
+    * Field names should be all lowercase, using underscores instead of
+      camelCase.
+
+      Do this::
+
+          class Person(models.Model):
+              first_name = models.CharField(max_length=20)
+              last_name = models.CharField(max_length=40)
+
+      Don't do this::
+
+          class Person(models.Model):
+              FirstName = models.CharField(max_length=20)
+              Last_Name = models.CharField(max_length=40)
+
+    * The ``class Meta`` should appear *after* the fields are defined, with
+      a single blank line separating the fields and the class definition.
+
+      Do this::
+
+          class Person(models.Model):
+              first_name = models.CharField(max_length=20)
+              last_name = models.CharField(max_length=40)
+
+              class Meta:
+                  verbose_name_plural = 'people'
+
+      Don't do this::
+
+          class Person(models.Model):
+              first_name = models.CharField(max_length=20)
+              last_name = models.CharField(max_length=40)
+              class Meta:
+                  verbose_name_plural = 'people'
+
+      Don't do this, either::
+
+          class Person(models.Model):
+              class Meta:
+                  verbose_name_plural = 'people'
+
+              first_name = models.CharField(max_length=20)
+              last_name = models.CharField(max_length=40)
+
+    * The order of model inner classes and standard methods should be as
+      follows (noting that these are not all required):
+
+        * All database fields
+        * ``class Meta``
+        * ``class Admin``
+        * ``def __unicode__()``
+        * ``def __str__()``
+        * ``def save()``
+        * ``def get_absolute_url()``
+        * Any custom methods
+
+    * If ``choices`` is defined for a given model field, define the choices as
+      a tuple of tuples, with an all-uppercase name, either near the top of the
+      model module or just above the model class. Example::
+
+          GENDER_CHOICES = (
+              ('M', 'Male'),
+              ('F', 'Female'),
+          )
+
+Documentation style
+===================
+
+We place a high importance on consistency and readability of documentation.
+(After all, Django was created in a journalism environment!)
+
+How to document new features
+----------------------------
+
+We treat our documentation like we treat our code: we aim to improve it as
+often as possible. This section explains how writers can craft their
+documentation changes in the most useful and least error-prone ways.
+
+Documentation changes come in two forms:
+
+    * General improvements -- Typo corrections, error fixes and better
+      explanations through clearer writing and more examples.
+
+    * New features -- Documentation of features that have been added to the
+      framework since the last release.
+
+Our philosophy is that "general improvements" are something that *all* current
+Django users should benefit from, including users of trunk *and* users of the
+latest release. Hence, the documentation section on djangoproject.com points
+people by default to the newest versions of the docs, because they have the
+latest and greatest content. (In fact, the Web site pulls directly from the
+Subversion repository, converting to HTML on the fly.)
+
+But this decision to feature bleeding-edge documentation has one large caveat:
+any documentation of *new* features will be seen by Django users who don't
+necessarily have access to those features yet, because they're only using the
+latest release. Thus, our policy is:
+
+    **All documentation of new features should be written in a way that clearly
+    designates the features are only available in the Django development
+    version. Assume documentation readers are using the latest release, not the
+    development version.**
+
+Our traditional way of marking new features is by prefacing the features'
+documentation with: "New in Django development version." Changes aren't
+*required* to include this exact text, but all documentation of new features
+should include the phrase "development version," so we can find and remove
+those phrases for the next release.
+
+Guidelines for ReST files
+-------------------------
+
+These guidelines regulate the format of our ReST documentation:
+
+    * In section titles, capitalize only initial words and proper nouns.
+
+    * Wrap the documentation at 80 characters wide, unless a code example
+      is significantly less readable when split over two lines, or for another
+      good reason.
+
+Commonly used terms
+-------------------
+
+Here are some style guidelines on commonly used terms throughout the
+documentation:
+
+    * **Django** -- when referring to the framework, capitalize Django. It is
+      lowercase only in Python code and in the djangoproject.com logo.
+
+    * **e-mail** -- it has a hyphen.
+
+    * **MySQL**
+
+    * **PostgreSQL**
+
+    * **Python** -- when referring to the language, capitalize Python.
+
+    * **realize**, **customize**, **initialize**, etc. -- use the American
+      "ize" suffix, not "ise."
+
+    * **SQLite**
+
+    * **subclass** -- it's a single word without a hyphen, both as a verb
+      ("subclass that model") and as a noun ("create a subclass").
+
+    * **Web**, **World Wide Web**, **the Web** -- note Web is always
+      capitalized when referring to the World Wide Web.
+
+    * **Web site** -- use two words, with Web capitalized.
+
+Django-specific terminology
+---------------------------
+
+    * **model** -- it's not capitalized.
+
+    * **template** -- it's not capitalized.
+
+    * **URLconf** -- use three capitalized letters, with no space before
+      "conf."
+
+    * **view** -- it's not capitalized.
 
 Committing code
 ===============
@@ -297,13 +701,8 @@ Django tarball. It's our policy to make sure all tests pass at all times.
 The tests cover:
 
     * Models and the database API (``tests/modeltests/``).
-    * The cache system (``tests/regressiontests/cache.py``).
-    * The ``django.utils.dateformat`` module (``tests/regressiontests/dateformat/``).
-    * Database typecasts (``tests/regressiontests/db_typecasts/``).
-    * The template system (``tests/regressiontests/templates/`` and
-      ``tests/regressiontests/defaultfilters/``).
-    * ``QueryDict`` objects (``tests/regressiontests/httpwrappers/``).
-    * Markup template tags (``tests/regressiontests/markup/``).
+    * Everything else in core Django code (``tests/regressiontests``)
+    * Contrib apps (``django/contrib/<contribapp>/tests``, see below)
 
 We appreciate any and all contributions to the test suite!
 
@@ -311,7 +710,7 @@ The Django tests all use the testing infrastructure that ships with Django for
 testing applications. See `Testing Django applications`_ for an explanation of
 how to write new tests.
 
-.. _Testing Django applications: http://www.djangoproject.com/documentation/testing/
+.. _Testing Django applications: ../testing/
 
 Running the unit tests
 ----------------------
@@ -321,15 +720,73 @@ To run the tests, ``cd`` to the ``tests/`` directory and type::
     ./runtests.py --settings=path.to.django.settings
 
 Yes, the unit tests need a settings module, but only for database connection
-info -- the ``DATABASE_ENGINE``, ``DATABASE_USER`` and ``DATABASE_PASSWORD``.
-You will also need a ``ROOT_URLCONF`` setting (its value is ignored; it just
-needs to be present) and a ``SITE_ID`` setting (any integer value will do) in
-order for all the tests to pass.
+info, with the ``DATABASE_ENGINE`` setting. You'll also need a ``ROOT_URLCONF``
+setting (its value is ignored; it just needs to be present).
 
-The unit tests will not touch your existing databases; they create a new
-database, called ``django_test_db``, which is deleted when the tests are
-finished. This means your user account needs permission to execute ``CREATE
-DATABASE``.
+If you're using the ``sqlite3`` database backend, no further settings are
+needed. A temporary database will be created in memory when running the tests.
+
+If you're using another backend:
+
+    * Your ``DATABASE_USER`` setting needs to specify an existing user account
+      for the database engine.
+
+    * The ``DATABASE_NAME`` setting must be the name of an existing database to
+      which the given user has permission to connect. The unit tests will not
+      touch this database; the test runner creates a new database whose name is
+      ``DATABASE_NAME`` prefixed with ``test_``, and this test database is
+      deleted when the tests are finished. This means your user account needs
+      permission to execute ``CREATE DATABASE``.
+
+You will also need to ensure that your database uses UTF-8 as the default
+character set. If your database server doesn't use UTF-8 as a default charset,
+you will need to include a value for ``TEST_DATABASE_CHARSET`` in your settings
+file.
+   
+If you want to run the full suite of tests, you'll need to install a number of
+dependencies:
+
+    *  PyYAML_
+    *  Markdown_
+    *  Textile_
+    *  Docutils_
+    *  setuptools_
+
+Each of these dependencies is optional. If you're missing any of them, the
+associated tests will be skipped.
+
+.. _PyYAML: http://pyyaml.org/wiki/PyYAML
+.. _Markdown: http://pypi.python.org/pypi/Markdown/1.7
+.. _Textile: http://pypi.python.org/pypi/textile
+.. _docutils: http://pypi.python.org/pypi/docutils/0.4
+.. _setuptools: http://pypi.python.org/pypi/setuptools/
+
+To run a subset of the unit tests, append the names of the test modules to the
+``runtests.py`` command line. See the list of directories in
+``tests/modeltests`` and ``tests/regressiontests`` for module names.
+
+As an example, if Django is not in your ``PYTHONPATH``, you placed
+``settings.py`` in the ``tests/`` directory, and you'd like to only run tests
+for generic relations and internationalization, type::
+
+    PYTHONPATH=..
+    ./runtests.py --settings=settings generic_relations i18n
+
+Contrib apps
+------------
+
+Tests for apps in ``django/contrib/`` go in their respective directories under
+``django/contrib/``, in a ``tests.py`` file. (You can split the tests over
+multiple modules by using a ``tests`` directory in the normal Python way.)
+
+For the tests to be found, a ``models.py`` file must exist (it doesn't
+have to have anything in it). If you have URLs that need to be
+mapped, put them in ``tests/urls.py``.
+
+To run tests for just one contrib app (e.g. ``markup``), use the same
+method as above::
+
+    ./runtests.py --settings=settings markup
 
 Requesting features
 ===================
@@ -438,12 +895,37 @@ Alternatively, you can use a symlink called ``django`` that points to the
 location of the branch's ``django`` package. If you want to switch back, just
 change the symlink to point to the old code.
 
+A third option is to use a `path file`_ (``<something>.pth``) which should
+work on all systems (including Windows, which doesn't have symlinks
+available). First, make sure there are no files, directories or symlinks named
+``django`` in your ``site-packages`` directory. Then create a text file named
+``django.pth`` and save it to your ``site-packages`` directory. That file
+should contain a path to your copy of Django on a single line and optional
+comments. Here is an example that points to multiple branches. Just uncomment
+the line for the branch you want to use ('Trunk' in this example) and make
+sure all other lines are commented::
+
+    # Trunk is a svn checkout of:
+    #   http://code.djangoproject.com/svn/django/trunk/
+    #
+    /path/to/trunk
+
+    # <branch> is a svn checkout of:
+    #   http://code.djangoproject.com/svn/django/branches/<branch>/
+    #
+    #/path/to/<branch>
+
+    # On windows a path may look like this:
+    # C:/path/to/<branch>
+
 If you're using Django 0.95 or earlier and installed it using
 ``python setup.py install``, you'll have a directory called something like
 ``Django-0.95-py2.4.egg`` instead of ``django``. In this case, edit the file
 ``setuptools.pth`` and remove the line that references the Django ``.egg``
 file. Then copy the branch's version of the ``django`` directory into
 ``site-packages``.
+
+.. _path file: http://docs.python.org/lib/module-site.html
 
 Official releases
 =================
@@ -548,8 +1030,8 @@ requests for commit access are potential flame-war starters, and will be ignored
 .. _search the tracker: http://code.djangoproject.com/search
 .. _django-users: http://groups.google.com/group/django-users
 .. _`#django`: irc://irc.freenode.net/django
-.. _list of tickets with patches: http://code.djangoproject.com/report/12
+.. _list of tickets with patches: http://code.djangoproject.com/query?status=new&status=assigned&status=reopened&has_patch=1&order=priority
 .. _PEP 8: http://www.python.org/peps/pep-0008.html
-.. _i18n documentation: http://www.djangoproject.com/documentation/i18n/
+.. _pep8.py: http://svn.browsershots.org/trunk/devtools/pep8/pep8.py
 .. _i18n branch: http://code.djangoproject.com/browser/django/branches/i18n
 .. _`tags/releases`: http://code.djangoproject.com/browser/django/tags/releases

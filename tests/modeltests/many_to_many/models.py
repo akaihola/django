@@ -10,19 +10,19 @@ and a publication has multiple articles.
 from django.db import models
 
 class Publication(models.Model):
-    title = models.CharField(maxlength=30)
+    title = models.CharField(max_length=30)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.title
 
     class Meta:
         ordering = ('title',)
 
 class Article(models.Model):
-    headline = models.CharField(maxlength=100)
+    headline = models.CharField(max_length=100)
     publications = models.ManyToManyField(Publication)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.headline
 
     class Meta:
@@ -39,6 +39,14 @@ __test__ = {'API_TESTS':"""
 
 # Create an Article.
 >>> a1 = Article(id=None, headline='Django lets you build Web apps easily')
+
+# You can't associate it with a Publication until it's been saved.
+>>> a1.publications.add(p1)
+Traceback (most recent call last):
+...
+ValueError: 'Article' instance needs to have a primary key value before a many-to-many relationship can be used.
+
+# Save it!
 >>> a1.save()
 
 # Associate the Article with a Publication.
@@ -126,6 +134,11 @@ __test__ = {'API_TESTS':"""
 >>> Publication.objects.filter(article__in=[a1,a2]).distinct()
 [<Publication: Highlights for Children>, <Publication: Science News>, <Publication: Science Weekly>, <Publication: The Python Journal>]
 
+# Excluding a related item works as you would expect, too (although the SQL
+# involved is a little complex).
+>>> Article.objects.exclude(publications=p2)
+[<Article: Django lets you build Web apps easily>]
+
 # If we delete a Publication, its Articles won't be able to access it.
 >>> p1.delete()
 >>> Publication.objects.all()
@@ -203,7 +216,19 @@ __test__ = {'API_TESTS':"""
 >>> p2.article_set.all()
 [<Article: Oxygen-free diet works wonders>]
 
-# Recreate the article and Publication we just deleted.
+# Relation sets can also be set using primary key values
+>>> p2.article_set = [a4.id, a5.id]
+>>> p2.article_set.all()
+[<Article: NASA finds intelligent life on Earth>, <Article: Oxygen-free diet works wonders>]
+>>> a4.publications.all()
+[<Publication: Science News>]
+>>> a4.publications = [p3.id]
+>>> p2.article_set.all()
+[<Article: Oxygen-free diet works wonders>]
+>>> a4.publications.all()
+[<Publication: Science Weekly>]
+
+# Recreate the article and Publication we have deleted.
 >>> p1 = Publication(id=None, title='The Python Journal')
 >>> p1.save()
 >>> a2 = Article(id=None, headline='NASA uses Python')

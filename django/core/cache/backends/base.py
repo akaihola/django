@@ -14,16 +14,24 @@ class BaseCache(object):
             timeout = 300
         self.default_timeout = timeout
 
+    def add(self, key, value, timeout=None):
+        """
+        Set a value in the cache if the key does not already exist. If
+        timeout is given, that timeout will be used for the key; otherwise
+        the default cache timeout will be used.
+        """
+        raise NotImplementedError
+
     def get(self, key, default=None):
         """
-        Fetch a given key from the cache.  If the key does not exist, return
+        Fetch a given key from the cache. If the key does not exist, return
         default, which itself defaults to None.
         """
         raise NotImplementedError
 
     def set(self, key, value, timeout=None):
         """
-        Set a value in the cache.  If timeout is given, that timeout will be
+        Set a value in the cache. If timeout is given, that timeout will be
         used for the key; otherwise the default cache timeout will be used.
         """
         raise NotImplementedError
@@ -36,10 +44,10 @@ class BaseCache(object):
 
     def get_many(self, keys):
         """
-        Fetch a bunch of keys from the cache.  For certain backends (memcached,
+        Fetch a bunch of keys from the cache. For certain backends (memcached,
         pgsql) this can be *much* faster when fetching multiple values.
 
-        Returns a dict mapping each key in keys to its value.  If the given
+        Returns a dict mapping each key in keys to its value. If the given
         key is missing, it will be missing from the response dict.
         """
         d = {}
@@ -54,3 +62,5 @@ class BaseCache(object):
         Returns True if the key is in the cache and has not expired.
         """
         return self.get(key) is not None
+
+    __contains__ = has_key

@@ -16,6 +16,10 @@ try:
     import thread
 except ImportError:
     import dummy_thread as thread
+try:
+    from functools import wraps
+except ImportError:
+    from django.utils.functional import wraps  # Python 2.3, 2.4 fallback. 
 from django.db import connection
 from django.conf import settings
 
@@ -46,12 +50,12 @@ def enter_transaction_management():
     when no current block is running).
     """
     thread_ident = thread.get_ident()
-    if state.has_key(thread_ident) and state[thread_ident]:
+    if thread_ident in state and state[thread_ident]:
         state[thread_ident].append(state[thread_ident][-1])
     else:
         state[thread_ident] = []
         state[thread_ident].append(settings.TRANSACTIONS_MANAGED)
-    if not dirty.has_key(thread_ident):
+    if thread_ident not in dirty:
         dirty[thread_ident] = False
 
 def leave_transaction_management():
@@ -61,7 +65,7 @@ def leave_transaction_management():
     those from outside. (Commits are on connection level.)
     """
     thread_ident = thread.get_ident()
-    if state.has_key(thread_ident) and state[thread_ident]:
+    if thread_ident in state and state[thread_ident]:
         del state[thread_ident][-1]
     else:
         raise TransactionManagementError("This code isn't under transaction management")
@@ -84,7 +88,7 @@ def set_dirty():
     changes waiting for commit.
     """
     thread_ident = thread.get_ident()
-    if dirty.has_key(thread_ident):
+    if thread_ident in dirty:
         dirty[thread_ident] = True
     else:
         raise TransactionManagementError("This code isn't under transaction management")
@@ -96,7 +100,7 @@ def set_clean():
     should happen.
     """
     thread_ident = thread.get_ident()
-    if dirty.has_key(thread_ident):
+    if thread_ident in dirty:
         dirty[thread_ident] = False
     else:
         raise TransactionManagementError("This code isn't under transaction management")
@@ -106,7 +110,7 @@ def is_managed():
     Checks whether the transaction manager is in manual or in auto state.
     """
     thread_ident = thread.get_ident()
-    if state.has_key(thread_ident):
+    if thread_ident in state:
         if state[thread_ident]:
             return state[thread_ident][-1]
     return settings.TRANSACTIONS_MANAGED
@@ -177,7 +181,7 @@ def autocommit(func):
             return func(*args, **kw)
         finally:
             leave_transaction_management()
-    return _autocommit
+    return wraps(func)(_autocommit)
 
 def commit_on_success(func):
     """
@@ -192,7 +196,10 @@ def commit_on_success(func):
             managed(True)
             try:
                 res = func(*args, **kw)
-            except Exception, e:
+            except (Exception, KeyboardInterrupt, SystemExit):
+                # (We handle KeyboardInterrupt and SystemExit specially, since
+                # they don't inherit from Exception in Python 2.5, but we
+                # should treat them uniformly here.)
                 if is_dirty():
                     rollback()
                 raise
@@ -202,7 +209,7 @@ def commit_on_success(func):
             return res
         finally:
             leave_transaction_management()
-    return _commit_on_success
+    return wraps(func)(_commit_on_success)
 
 def commit_manually(func):
     """
@@ -219,4 +226,4 @@ def commit_manually(func):
         finally:
             leave_transaction_management()
 
-    return _commit_manually
+    return wraps(func)(_commit_manually)

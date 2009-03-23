@@ -66,10 +66,19 @@ deleting arbitrary data in the cache. All data is stored directly in memory,
 so there's no overhead of database or filesystem usage.
 
 After installing Memcached itself, you'll need to install the Memcached Python
-bindings. They're in a single Python module, memcache.py, available at
-ftp://ftp.tummy.com/pub/python-memcached/ . If that URL is no longer valid,
-just go to the Memcached Web site (http://www.danga.com/memcached/) and get the
-Python bindings from the "Client APIs" section.
+bindings. Two versions of this are available. Choose and install *one* of the
+following modules:
+
+    * The fastest available option is a module called ``cmemcache``, available
+      at http://gijsbert.org/cmemcache/ . (This module is only compatible with
+      the Django development version. Django 0.96 is only compatible with the
+      second option, below.)
+
+    * If you can't install ``cmemcache``, you can install ``python-memcached``,
+      available at ftp://ftp.tummy.com/pub/python-memcached/ . If that URL is
+      no longer valid, just go to the Memcached Web site
+      (http://www.danga.com/memcached/) and get the Python bindings from the
+      "Client APIs" section.
 
 To use Memcached with Django, set ``CACHE_BACKEND`` to
 ``memcached://ip:port/``, where ``ip`` is the IP address of the Memcached
@@ -110,8 +119,8 @@ in your database that is in the proper format that Django's database-cache
 system expects.
 
 Once you've created that database table, set your ``CACHE_BACKEND`` setting to
-``"db://tablename/"``, where ``tablename`` is the name of the database table.
-In this example, the cache table's name is ``my_cache_table``:
+``"db://tablename"``, where ``tablename`` is the name of the database table.
+In this example, the cache table's name is ``my_cache_table``::
 
     CACHE_BACKEND = 'db://my_cache_table'
 
@@ -159,6 +168,10 @@ development or testing environments. For example::
 
     CACHE_BACKEND = 'simple:///'
 
+**New in Django development version:** This cache backend is deprecated and
+will be removed in a future release. New code should use the ``locmem`` backend
+instead.
+
 Dummy caching (for development)
 -------------------------------
 
@@ -167,9 +180,11 @@ just implements the cache interface without doing anything.
 
 This is useful if you have a production site that uses heavy-duty caching in
 various places but a development/test environment on which you don't want to
-cache. In that case, set ``CACHE_BACKEND`` to ``"dummy:///"`` in the settings
-file for your development environment. As a result, your development
-environment won't use caching and your production environment still will.
+cache. As a result, your development environment won't use caching and your
+production environment still will. To activate dummy caching, set
+``CACHE_BACKEND`` like so::
+
+    CACHE_BACKEND = 'dummy:///'
 
 CACHE_BACKEND arguments
 -----------------------
@@ -217,7 +232,7 @@ entire site. Just add ``'django.middleware.cache.CacheMiddleware'`` to your
         'django.middleware.common.CommonMiddleware',
     )
 
-(The order of ``MIDDLEWARE_CLASSES`` matters. See "Order of MIDDLEWARE_CLASSES"
+(The order of ``MIDDLEWARE_CLASSES`` matters. See `Order of MIDDLEWARE_CLASSES`_
 below.)
 
 Then, add the following required settings to your Django settings file:
@@ -250,7 +265,19 @@ Additionally, ``CacheMiddleware`` automatically sets a few headers in each
 
 See the `middleware documentation`_ for more on middleware.
 
-.. _`middleware documentation`: http://www.djangoproject.com/documentation/middleware/
+.. _`middleware documentation`: ../middleware/
+
+**New in Django development version**
+
+If a view sets its own cache expiry time (i.e. it has a ``max-age`` section in
+its ``Cache-Control`` header) then the page will be cached until the expiry
+time, rather than ``CACHE_MIDDLEWARE_SECONDS``. Using the decorators in
+``django.views.decorators.cache`` you can easily set a view's expiry time
+(using the ``cache_control`` decorator) or disable caching for a view (using
+the ``never_cache`` decorator). See the `using other headers`__ section for
+more on these decorators.
+
+__ `Controlling cache: Using other headers`_
 
 The per-view cache
 ==================
@@ -276,6 +303,49 @@ Or, using Python 2.4's decorator syntax::
 ``cache_page`` takes a single argument: the cache timeout, in seconds. In the
 above example, the result of the ``slashdot_this()`` view will be cached for 15
 minutes.
+
+Template fragment caching
+=========================
+
+**New in development version**
+
+If you're after even more control, you can also cache template fragments using
+the ``cache`` template tag. To give your template access to this tag, put
+``{% load cache %}`` near the top of your template.
+
+The ``{% cache %}`` template tag caches the contents of the block for a given
+amount of time. It takes at least two arguments: the cache timeout, in seconds,
+and the name to give the cache fragment. For example::
+
+    {% load cache %}
+    {% cache 500 sidebar %}
+        .. sidebar ..
+    {% endcache %}
+
+Sometimes you might want to cache multiple copies of a fragment depending on
+some dynamic data that appears inside the fragment. For example, you might want a
+separate cached copy of the sidebar used in the previous example for every user
+of your site. Do this by passing additional arguments to the ``{% cache %}``
+template tag to uniquely identify the cache fragment::
+
+    {% load cache %}
+    {% cache 500 sidebar request.user.username %}
+        .. sidebar for logged in user ..
+    {% endcache %}
+
+It's perfectly fine to specify more than one argument to identify the fragment.
+Simply pass as many arguments to ``{% cache %}`` as you need.
+
+The cache timeout can be a template variable, as long as the template variable
+resolves to an integer value. For example, if the template variable
+``my_timeout`` is set to the value ``600``, then the following two examples are
+equivalent::
+
+    {% cache 600 sidebar %} ... {% endcache %}
+    {% cache my_timeout sidebar %} ... {% endcache %}
+
+This feature is useful in avoiding repetition in templates. You can set the
+timeout in a variable, in one place, and just reuse that value.
 
 The low-level cache API
 =======================
@@ -315,7 +385,16 @@ get() can take a ``default`` argument::
     >>> cache.get('my_key', 'has expired')
     'has expired'
 
-There's also a get_many() interface that only hits the cache once. get_many()
+**New in Django development version:** To add a key only if it doesn't already
+exist, use the ``add()`` method. It takes the same parameters as ``set()``, but
+it will not attempt to update the cache if the key specified is already present::
+
+    >>> cache.set('add_key', 'Initial value')
+    >>> cache.add('add_key', 'New value')
+    >>> cache.get('add_key')
+    'Initial value'
+
+There's also a ``get_many()`` interface that only hits the cache once. ``get_many()``
 returns a dictionary with all the keys you asked for that actually exist in the
 cache (and haven't expired)::
 
@@ -513,6 +592,15 @@ the value of the ``CACHE_MIDDLEWARE_SETTINGS`` setting. If you use a custom
 ``max_age`` in a ``cache_control`` decorator, the decorator will take
 precedence, and the header values will be merged correctly.)
 
+If you want to use headers to disable caching altogether,
+``django.views.decorators.cache.never_cache`` is a view decorator that adds
+headers to ensure the response won't be cached by browsers or other caches. Example::
+
+    from django.views.decorators.cache import never_cache
+    @never_cache
+    def myview(request):
+        ...
+
 .. _`Cache-Control spec`: http://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html#sec14.9
 
 Other optimizations
@@ -534,10 +622,13 @@ Order of MIDDLEWARE_CLASSES
 If you use ``CacheMiddleware``, it's important to put it in the right place
 within the ``MIDDLEWARE_CLASSES`` setting, because the cache middleware needs
 to know which headers by which to vary the cache storage. Middleware always
-adds something the ``Vary`` response header when it can.
+adds something to the ``Vary`` response header when it can.
 
-Put the ``CacheMiddleware`` after any middlewares that might add something to
-the ``Vary`` header. The following middlewares do so:
+Put the ``CacheMiddleware`` *before* any other middleware that might add
+something to the ``Vary`` header (response middleware is applied in reverse
+order). The following middleware modules do so:
 
     * ``SessionMiddleware`` adds ``Cookie``
     * ``GZipMiddleware`` adds ``Accept-Encoding``
+    * ``LocaleMiddleware`` adds ``Accept-Language``
+

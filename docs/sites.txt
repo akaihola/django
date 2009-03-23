@@ -46,7 +46,7 @@ that's represented by a ``ManyToManyField`` in the ``Article`` model::
     from django.contrib.sites.models import Site
 
     class Article(models.Model):
-        headline = models.CharField(maxlength=200)
+        headline = models.CharField(max_length=200)
         # ...
         sites = models.ManyToManyField(Site)
 
@@ -87,7 +87,7 @@ like this::
     from django.contrib.sites.models import Site
 
     class Article(models.Model):
-        headline = models.CharField(maxlength=200)
+        headline = models.CharField(max_length=200)
         # ...
         site = models.ForeignKey(Site)
 
@@ -97,7 +97,7 @@ Hooking into the current site from views
 ----------------------------------------
 
 On a lower level, you can use the sites framework in your Django views to do
-particular things based on what site in which the view is being called.
+particular things based on the site in which the view is being called.
 For example::
 
     from django.conf import settings
@@ -213,6 +213,31 @@ To do this, you can use the sites framework. A simple example::
     >>> 'http://%s%s' % (Site.objects.get_current().domain, obj.get_absolute_url())
     'http://example.com/mymodel/objects/3/'
 
+Caching the current ``Site`` object
+===================================
+
+**New in Django development version**
+
+As the current site is stored in the database, each call to
+``Site.objects.get_current()`` could result in a database query. But Django is a
+little cleverer than that: on the first request, the current site is cached, and
+any subsequent call returns the cached data instead of hitting the database.
+
+If for any reason you want to force a database query, you can tell Django to
+clear the cache using ``Site.objects.clear_cache()``::
+
+    # First call; current site fetched from database.
+    current_site = Site.objects.get_current()
+    # ...
+
+    # Second call; current site fetched from cache.
+    current_site = Site.objects.get_current()
+    # ...
+
+    # Force a database query for the third call.
+    Site.objects.clear_cache()
+    current_site = Site.objects.get_current()
+
 The ``CurrentSiteManager``
 ==========================
 
@@ -229,7 +254,7 @@ Use ``CurrentSiteManager`` by adding it to your model explicitly. For example::
 
     class Photo(models.Model):
         photo = models.FileField(upload_to='/home/photos')
-        photographer_name = models.CharField(maxlength=100)
+        photographer_name = models.CharField(max_length=100)
         pub_date = models.DateField()
         site = models.ForeignKey(Site)
         objects = models.Manager()
@@ -257,7 +282,7 @@ this::
 
     class Photo(models.Model):
         photo = models.FileField(upload_to='/home/photos')
-        photographer_name = models.CharField(maxlength=100)
+        photographer_name = models.CharField(max_length=100)
         pub_date = models.DateField()
         publish_on = models.ForeignKey(Site)
         objects = models.Manager()
@@ -276,8 +301,8 @@ you want your admin site to have access to all objects (not just site-specific
 ones), put ``objects = models.Manager()`` in your model, before you define
 ``CurrentSiteManager``.
 
-.. _manager: http://www.djangoproject.com/documentation/model_api/#managers
-.. _manager documentation: http://www.djangoproject.com/documentation/model_api/#managers
+.. _manager: ../model-api/#managers
+.. _manager documentation: ../model-api/#managers
 
 How Django uses the sites framework
 ===================================
@@ -305,18 +330,39 @@ Here's how Django uses the sites framework:
       retrieving flatpages to display.
 
     * In the `syndication framework`_, the templates for ``title`` and
-      ``description`` automatically have access to a variable ``{{{ site }}}``,
+      ``description`` automatically have access to a variable ``{{ site }}``,
       which is the ``Site`` object representing the current site. Also, the
       hook for providing item URLs will use the ``domain`` from the current
       ``Site`` object if you don't specify a fully-qualified domain.
 
     * In the `authentication framework`_, the ``django.contrib.auth.views.login``
-      view passes the current ``Site`` name to the template as ``{{{ site_name }}}``.
+      view passes the current ``Site`` name to the template as ``{{ site_name }}``.
 
     * The shortcut view (``django.views.defaults.shortcut``) uses the domain of
       the current ``Site`` object when calculating an object's URL.
 
-.. _redirects framework: http://www.djangoproject.com/documentation/redirects/
-.. _flatpages framework: http://www.djangoproject.com/documentation/flatpages/
-.. _syndication framework: http://www.djangoproject.com/documentation/syndication/
-.. _authentication framework: http://www.djangoproject.com/documentation/authentication/
+    * In the admin framework, the ''view on site'' link uses the current
+      ``Site`` to work out the domain for the site that it will redirect to.
+
+.. _redirects framework: ../redirects/
+.. _flatpages framework: ../flatpages/
+.. _syndication framework: ../syndication_feeds/
+.. _authentication framework: ../authentication/
+
+``RequestSite`` objects
+=======================
+
+**New in Django development version**
+
+Some ``django.contrib`` applications take advantage of the sites framework but
+are architected in a way that doesn't *require* the sites framework to be
+installed in your database. (Some people don't want to, or just aren't *able*
+to install the extra database table that the sites framework requires.) For
+those cases, the framework provides a ``RequestSite`` class, which can be used
+as a fallback when the database-backed sites framework is not available.
+
+A ``RequestSite`` object has a similar interface to a normal ``Site`` object,
+except its ``__init__()`` method takes an ``HttpRequest`` object. It's able to
+deduce the ``domain`` and ``name`` by looking at the request's domain. It has
+``save()`` and ``delete()`` methods to match the interface of ``Site``, but
+the methods raise ``NotImplementedError``.

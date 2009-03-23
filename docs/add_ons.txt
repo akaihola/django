@@ -1,13 +1,21 @@
-=====================
-The "contrib" add-ons
-=====================
+============================
+The "django.contrib" add-ons
+============================
 
 Django aims to follow Python's `"batteries included" philosophy`_. It ships
 with a variety of extra, optional tools that solve common Web-development
 problems.
 
-This code lives in ``django/contrib`` in the Django distribution. Here's a
-rundown of the packages in ``contrib``:
+This code lives in ``django/contrib`` in the Django distribution. This document
+gives a rundown of the packages in ``contrib``, along with any dependencies
+those packages have.
+
+.. admonition:: Note
+
+    For most of these add-ons -- specifically, the add-ons that include either
+    models or template tags -- you'll need to add the package name (e.g.,
+    ``'django.contrib.admin'``) to your ``INSTALLED_APPS`` setting and re-run
+    ``manage.py syncdb``.
 
 .. _"batteries included" philosophy: http://docs.python.org/tut/node12.html#batteries-included
 
@@ -17,7 +25,9 @@ admin
 The automatic Django administrative interface. For more information, see
 `Tutorial 2`_.
 
-.. _Tutorial 2: http://www.djangoproject.com/documentation/tutorial2/
+.. _Tutorial 2: ../tutorial02/
+
+Requires the auth_ and contenttypes_ contrib packages to be installed.
 
 auth
 ====
@@ -26,7 +36,7 @@ Django's authentication framework.
 
 See the `authentication documentation`_.
 
-.. _authentication documentation: http://www.djangoproject.com/documentation/authentication/
+.. _authentication documentation: ../authentication/
 
 comments
 ========
@@ -37,7 +47,11 @@ contenttypes
 ============
 
 A light framework for hooking into "types" of content, where each installed
-Django model is a separate content type. This is not yet documented.
+Django model is a separate content type.
+
+See the `contenttypes documentation`_.
+
+.. _contenttypes documentation: ../contenttypes/
 
 csrf
 ====
@@ -46,12 +60,21 @@ A middleware for preventing Cross Site Request Forgeries
 
 See the `csrf documentation`_.
 
-.. _csrf documentation: http://www.djangoproject.com/documentation/csrf/
+.. _csrf documentation: ../csrf/
+
+flatpages
+=========
+
+A framework for managing simple "flat" HTML content in a database.
+
+See the `flatpages documentation`_.
+
+.. _flatpages documentation: ../flatpages/
+
+Requires the sites_ contrib package to be installed as well.
 
 formtools
 =========
-
-**New in Django development version**
 
 A set of high-level abstractions for Django forms (django.newforms).
 
@@ -62,8 +85,9 @@ An abstraction of the following workflow:
 
 "Display an HTML form, force a preview, then do something with the submission."
 
-Full documentation for this feature does not yet exist, but you can read the
-code and docstrings in ``django/contrib/formtools/preview.py`` for a start.
+See the `form preview documentation`_.
+
+.. _form preview documentation: ../form_preview/
 
 humanize
 ========
@@ -130,25 +154,61 @@ Examples:
 
 You can pass in either an integer or a string representation of an integer.
 
-flatpages
-=========
+naturalday
+----------
 
-A framework for managing simple "flat" HTML content in a database.
+**New in Django development version**
 
-See the `flatpages documentation`_.
+For dates that are the current day or within one day, return "today",
+"tomorrow" or "yesterday", as appropriate. Otherwise, format the date using
+the passed in format string.
 
-.. _flatpages documentation: http://www.djangoproject.com/documentation/flatpages/
+**Argument:** Date formatting string as described in default tag now_.
+
+.. _now: ../templates/#now
+
+Examples (when 'today' is 17 Feb 2007):
+
+    * ``16 Feb 2007`` becomes ``yesterday``.
+    * ``17 Feb 2007`` becomes ``today``.
+    * ``18 Feb 2007`` becomes ``tomorrow``.
+    * Any other day is formatted according to given argument or the
+      `DATE_FORMAT`_ setting if no argument is given.
+
+.. _DATE_FORMAT: ../settings/#date_format
+
+localflavor
+===========
+
+A collection of various Django snippets that are useful only for a particular
+country or culture. For example, ``django.contrib.localflavor.us.forms``
+contains a ``USZipCodeField`` that you can use to validate U.S. zip codes.
+
+See the `localflavor documentation`_.
+
+.. _localflavor documentation: ../localflavor/
 
 markup
 ======
 
-A collection of template filters that implement these common markup languages:
+A collection of template filters that implement common markup languages:
 
-    * Textile
-    * Markdown
-    * ReST (ReStructured Text)
+    * ``textile`` -- implements `Textile`_
+    * ``markdown`` -- implements `Markdown`_
+    * ``restructuredtext`` -- implements `ReST (ReStructured Text)`_
 
-For documentation, read the source code in django/contrib/markup/templatetags/markup.py.
+In each case, the filter expects formatted markup as a string and returns a
+string representing the marked-up text. For example, the ``textile`` filter
+converts text that is marked-up in Textile format to HTML.
+
+To activate these filters, add ``'django.contrib.markup'`` to your
+``INSTALLED_APPS`` setting. Once you've done that, use ``{% load markup %}`` in
+a template, and you'll have access to these filters. For more documentation,
+read the source code in django/contrib/markup/templatetags/markup.py.
+
+.. _Textile: http://en.wikipedia.org/wiki/Textile_%28markup_language%29
+.. _Markdown: http://en.wikipedia.org/wiki/Markdown
+.. _ReST (ReStructured Text): http://en.wikipedia.org/wiki/ReStructuredText
 
 redirects
 =========
@@ -157,7 +217,16 @@ A framework for managing redirects.
 
 See the `redirects documentation`_.
 
-.. _redirects documentation: http://www.djangoproject.com/documentation/redirects/
+.. _redirects documentation: ../redirects/
+
+sessions
+========
+
+A framework for storing data in anonymous sessions.
+
+See the `sessions documentation`_.
+
+.. _sessions documentation: ../sessions/
 
 sites
 =====
@@ -168,7 +237,7 @@ one or more sites.
 
 See the `sites documentation`_.
 
-.. _sites documentation: http://www.djangoproject.com/documentation/sites/
+.. _sites documentation: ../sites/
 
 sitemaps
 ========
@@ -177,7 +246,7 @@ A framework for generating Google sitemap XML files.
 
 See the `sitemaps documentation`_.
 
-.. _sitemaps documentation: http://www.djangoproject.com/documentation/sitemaps/
+.. _sitemaps documentation: ../sitemaps/
 
 syndication
 ===========
@@ -186,7 +255,17 @@ A framework for generating syndication feeds, in RSS and Atom, quite easily.
 
 See the `syndication documentation`_.
 
-.. _syndication documentation: http://www.djangoproject.com/documentation/syndication/
+.. _syndication documentation: ../syndication_feeds/
+
+webdesign
+=========
+
+Helpers and utilties targeted primarily at Web *designers* rather than
+Web *developers*.
+
+See the `Web design helpers documentation`_.
+
+.. _Web design helpers documentation: ../webdesign/
 
 Other add-ons
 =============

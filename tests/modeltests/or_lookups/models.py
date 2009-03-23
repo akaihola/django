@@ -4,23 +4,26 @@
 To perform an OR lookup, or a lookup that combines ANDs and ORs,
 combine QuerySet objects using & and | operators.
 
-Alternatively, use positional arguments, and pass one or more expressions
-of clauses using the variable ``django.db.models.Q`` (or any object with
-a get_sql method).
-
-
+Alternatively, use positional arguments, and pass one or more expressions of
+clauses using the variable ``django.db.models.Q`` (or any object with an
+add_to_query method).
 """
+# Python 2.3 doesn't have sorted()
+try:
+    sorted
+except NameError:
+    from django.utils.itercompat import sorted
 
 from django.db import models
 
 class Article(models.Model):
-    headline = models.CharField(maxlength=50)
+    headline = models.CharField(max_length=50)
     pub_date = models.DateTimeField()
 
     class Meta:
        ordering = ('pub_date',)
 
-    def __str__(self):
+    def __unicode__(self):
         return self.headline
 
 __test__ = {'API_TESTS':"""
@@ -72,6 +75,8 @@ __test__ = {'API_TESTS':"""
 # You could also use "in" to accomplish the same as above.
 >>> Article.objects.filter(pk__in=[1,2,3])
 [<Article: Hello>, <Article: Goodbye>, <Article: Hello and goodbye>]
+>>> Article.objects.filter(pk__in=(1,2,3))
+[<Article: Hello>, <Article: Goodbye>, <Article: Hello and goodbye>]
 
 >>> Article.objects.filter(pk__in=[1,2,3,4])
 [<Article: Hello>, <Article: Goodbye>, <Article: Hello and goodbye>]
@@ -92,15 +97,27 @@ __test__ = {'API_TESTS':"""
 >>> Article.objects.filter(Q(headline__contains='bye'), headline__startswith='Hello')
 [<Article: Hello and goodbye>]
 
-# Try some arg queries with operations other than get_list
+# Q objects can be negated
+>>> Article.objects.filter(Q(pk=1) | ~Q(pk=2))
+[<Article: Hello>, <Article: Hello and goodbye>]
+>>> Article.objects.filter(~Q(pk=1) & ~Q(pk=2))
+[<Article: Hello and goodbye>]
+
+# This allows for more complex queries than filter() and exclude() alone would
+# allow
+>>> Article.objects.filter(Q(pk=1) & (~Q(pk=2) | Q(pk=3)))
+[<Article: Hello>]
+
+# Try some arg queries with operations other than filter.
 >>> Article.objects.get(Q(headline__startswith='Hello'), Q(headline__contains='bye'))
 <Article: Hello and goodbye>
 
 >>> Article.objects.filter(Q(headline__startswith='Hello') | Q(headline__contains='bye')).count()
 3
 
->>> list(Article.objects.filter(Q(headline__startswith='Hello'), Q(headline__contains='bye')).values())
-[{'headline': 'Hello and goodbye', 'pub_date': datetime.datetime(2005, 11, 29, 0, 0), 'id': 3}]
+>>> dicts = list(Article.objects.filter(Q(headline__startswith='Hello'), Q(headline__contains='bye')).values())
+>>> [sorted(d.items()) for d in dicts]
+[[('headline', u'Hello and goodbye'), ('id', 3), ('pub_date', datetime.datetime(2005, 11, 29, 0, 0))]]
 
 >>> Article.objects.filter(Q(headline__startswith='Hello')).in_bulk([1,2])
 {1: <Article: Hello>}

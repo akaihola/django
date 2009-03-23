@@ -7,6 +7,7 @@ a list of all possible variables.
 """
 
 import os
+import time     # Needed for Windows
 from django.conf import global_settings
 
 ENVIRONMENT_VARIABLE = "DJANGO_SETTINGS_MODULE"
@@ -36,6 +37,8 @@ class LazySettings(object):
             # __setattr__(), which would be an infinite loop.
             self.__dict__['_target'] = value
         else:
+            if self._target is None:
+                self._import_settings()
             setattr(self._target, name, value)
 
     def _import_settings(self):
@@ -49,7 +52,9 @@ class LazySettings(object):
             if not settings_module: # If it's set but is an empty string.
                 raise KeyError
         except KeyError:
-            raise EnvironmentError, "Environment variable %s is undefined." % ENVIRONMENT_VARIABLE
+            # NOTE: This is arguably an EnvironmentError, but that causes
+            # problems with Python's interactive help.
+            raise ImportError("Settings cannot be imported, because environment variable %s is undefined." % ENVIRONMENT_VARIABLE)
 
         self._target = Settings(settings_module)
 
@@ -60,11 +65,18 @@ class LazySettings(object):
         argument must support attribute access (__getattr__)).
         """
         if self._target != None:
-            raise EnvironmentError, 'Settings already configured.'
+            raise RuntimeError, 'Settings already configured.'
         holder = UserSettingsHolder(default_settings)
         for name, value in options.items():
             setattr(holder, name, value)
         self._target = holder
+
+    def configured(self):
+        """
+        Returns True if the settings have already been configured.
+        """
+        return bool(self._target)
+    configured = property(configured)
 
 class Settings(object):
     def __init__(self, settings_module):
@@ -79,7 +91,7 @@ class Settings(object):
         try:
             mod = __import__(self.SETTINGS_MODULE, {}, {}, [''])
         except ImportError, e:
-            raise EnvironmentError, "Could not import settings '%s' (Is it on sys.path? Does it have syntax errors?): %s" % (self.SETTINGS_MODULE, e)
+            raise ImportError, "Could not import settings '%s' (Is it on sys.path? Does it have syntax errors?): %s" % (self.SETTINGS_MODULE, e)
 
         # Settings that should be converted into tuples if they're mistakenly entered
         # as strings.
@@ -105,8 +117,11 @@ class Settings(object):
                 new_installed_apps.append(app)
         self.INSTALLED_APPS = new_installed_apps
 
-        # move the time zone info into os.environ
-        os.environ['TZ'] = self.TIME_ZONE
+        if hasattr(time, 'tzset'):
+            # Move the time zone info into os.environ. See ticket #2315 for why
+            # we don't do this unconditionally (breaks Windows).
+            os.environ['TZ'] = self.TIME_ZONE
+            time.tzset()
 
     def get_all_members(self):
         return dir(self)
@@ -134,13 +149,3 @@ class UserSettingsHolder(object):
 
 settings = LazySettings()
 
-# This function replaces itself with django.utils.translation.gettext() the
-# first time it's run. This is necessary because the import of
-# django.utils.translation requires a working settings module, and loading it
-# from within this file would cause a circular import.
-def first_time_gettext(*args):
-    from django.utils.translation import gettext
-    __builtins__['_'] = gettext
-    return gettext(*args)
-
-__builtins__['_'] = first_time_gettext

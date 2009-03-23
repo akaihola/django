@@ -8,7 +8,7 @@
 >>> q['foo']
 Traceback (most recent call last):
 ...
-MultiValueDictKeyError: "Key 'foo' not found in <MultiValueDict: {}>"
+MultiValueDictKeyError: "Key 'foo' not found in <QueryDict: {}>"
 
 >>> q['something'] = 'bar'
 Traceback (most recent call last):
@@ -32,6 +32,9 @@ Traceback (most recent call last):
 AttributeError: This QueryDict instance is immutable
 
 >>> q.has_key('foo')
+False
+
+>>> 'foo' in q
 False
 
 >>> q.items()
@@ -86,21 +89,27 @@ AttributeError: This QueryDict instance is immutable
 >>> q['foo']
 Traceback (most recent call last):
 ...
-MultiValueDictKeyError: "Key 'foo' not found in <MultiValueDict: {}>"
+MultiValueDictKeyError: "Key 'foo' not found in <QueryDict: {}>"
 
 >>> q['name'] = 'john'
 
 >>> q['name']
-'john'
+u'john'
+
+>>> del q['name']
+>>> 'name' in q
+False
+
+>>> q['name'] = 'john'
 
 >>> q.get('foo', 'default')
 'default'
 
 >>> q.get('name', 'default')
-'john'
+u'john'
 
 >>> q.getlist('name')
-['john']
+[u'john']
 
 >>> q.getlist('foo')
 []
@@ -108,33 +117,36 @@ MultiValueDictKeyError: "Key 'foo' not found in <MultiValueDict: {}>"
 >>> q.setlist('foo', ['bar', 'baz'])
 
 >>> q.get('foo', 'default')
-'baz'
+u'baz'
 
 >>> q.getlist('foo')
-['bar', 'baz']
+[u'bar', u'baz']
 
 >>> q.appendlist('foo', 'another')
 
 >>> q.getlist('foo')
-['bar', 'baz', 'another']
+[u'bar', u'baz', u'another']
 
 >>> q['foo']
-'another'
+u'another'
 
 >>> q.has_key('foo')
 True
 
+>>> 'foo' in q
+True
+
 >>> q.items()
-[('foo', 'another'), ('name', 'john')]
+[(u'foo', u'another'), (u'name', u'john')]
 
 >>> q.lists()
-[('foo', ['bar', 'baz', 'another']), ('name', ['john'])]
+[(u'foo', [u'bar', u'baz', u'another']), (u'name', [u'john'])]
 
 >>> q.keys()
-['foo', 'name']
+[u'foo', u'name']
 
 >>> q.values()
-['another', 'john']
+[u'another', u'john']
 
 >>> len(q)
 2
@@ -143,28 +155,31 @@ True
 
 # Displays last value
 >>> q['foo']
-'hello'
+u'hello'
 
 >>> q.get('foo', 'not available')
-'hello'
+u'hello'
 
 >>> q.getlist('foo')
-['bar', 'baz', 'another', 'hello']
+[u'bar', u'baz', u'another', u'hello']
 
 >>> q.pop('foo')
-['bar', 'baz', 'another', 'hello']
+[u'bar', u'baz', u'another', u'hello']
+
+>>> q.pop('foo', 'not there')
+'not there'
 
 >>> q.get('foo', 'not there')
 'not there'
 
 >>> q.setdefault('foo', 'bar')
-'bar'
+u'bar'
 
 >>> q['foo']
-'bar'
+u'bar'
 
 >>> q.getlist('foo')
-['bar']
+[u'bar']
 
 >>> q.urlencode()
 'foo=bar&name=john'
@@ -181,12 +196,12 @@ True
 >>> q = QueryDict('foo=bar')
 
 >>> q['foo']
-'bar'
+u'bar'
 
 >>> q['bar']
 Traceback (most recent call last):
 ...
-MultiValueDictKeyError: "Key 'bar' not found in <MultiValueDict: {'foo': ['bar']}>"
+MultiValueDictKeyError: "Key 'bar' not found in <QueryDict: {u'foo': [u'bar']}>"
 
 >>> q['something'] = 'bar'
 Traceback (most recent call last):
@@ -194,13 +209,13 @@ Traceback (most recent call last):
 AttributeError: This QueryDict instance is immutable
 
 >>> q.get('foo', 'default')
-'bar'
+u'bar'
 
 >>> q.get('bar', 'default')
 'default'
 
 >>> q.getlist('foo')
-['bar']
+[u'bar']
 
 >>> q.getlist('bar')
 []
@@ -218,20 +233,26 @@ AttributeError: This QueryDict instance is immutable
 >>> q.has_key('foo')
 True
 
+>>> 'foo' in q
+True
+
 >>> q.has_key('bar')
 False
 
+>>> 'bar' in q
+False
+
 >>> q.items()
-[('foo', 'bar')]
+[(u'foo', u'bar')]
 
 >>> q.lists()
-[('foo', ['bar'])]
+[(u'foo', [u'bar'])]
 
 >>> q.keys()
-['foo']
+[u'foo']
 
 >>> q.values()
-['bar']
+[u'bar']
 
 >>> len(q)
 1
@@ -271,7 +292,7 @@ AttributeError: This QueryDict instance is immutable
 >>> q = QueryDict('vote=yes&vote=no')
 
 >>> q['vote']
-'no'
+u'no'
 
 >>> q['something'] = 'bar'
 Traceback (most recent call last):
@@ -279,13 +300,13 @@ Traceback (most recent call last):
 AttributeError: This QueryDict instance is immutable
 
 >>> q.get('vote', 'default')
-'no'
+u'no'
 
 >>> q.get('foo', 'default')
 'default'
 
 >>> q.getlist('vote')
-['yes', 'no']
+[u'yes', u'no']
 
 >>> q.getlist('foo')
 []
@@ -303,20 +324,26 @@ AttributeError: This QueryDict instance is immutable
 >>> q.has_key('vote')
 True
 
+>>> 'vote' in q
+True
+
 >>> q.has_key('foo')
 False
 
+>>> 'foo' in q
+False
+
 >>> q.items()
-[('vote', 'no')]
+[(u'vote', u'no')]
 
 >>> q.lists()
-[('vote', ['yes', 'no'])]
+[(u'vote', [u'yes', u'no'])]
 
 >>> q.keys()
-['vote']
+[u'vote']
 
 >>> q.values()
-['no']
+[u'no']
 
 >>> len(q)
 1
@@ -349,9 +376,60 @@ AttributeError: This QueryDict instance is immutable
 >>> q.urlencode()
 'vote=yes&vote=no'
 
+>>> del q['vote']
+Traceback (most recent call last):
+...
+AttributeError: This QueryDict instance is immutable
+
+# QueryDicts must be able to handle invalid input encoding (in this case, bad
+# UTF-8 encoding).
+>>> q = QueryDict('foo=bar&foo=\xff')
+
+>>> q['foo']
+u'\ufffd'
+
+>>> q.getlist('foo')
+[u'bar', u'\ufffd']
+
+
+###################################### 
+# HttpResponse with Unicode headers  # 
+###################################### 
+ 
+>>> r = HttpResponse() 
+ 
+If we insert a unicode value it will be converted to an ascii
+string. This makes sure we comply with the HTTP specifications.
+ 
+>>> r['value'] = u'test value' 
+>>> isinstance(r['value'], str) 
+True
+
+An error is raised When a unicode object with non-ascii is assigned.
+
+>>> r['value'] = u't\xebst value' # doctest:+ELLIPSIS
+Traceback (most recent call last):
+...
+UnicodeEncodeError: ..., HTTP response headers must be in US-ASCII format
+ 
+The response also converts unicode keys to strings. 
+ 
+>>> r[u'test'] = 'testing key' 
+>>> l = list(r.items())
+>>> l.sort()
+>>> l[1]
+('test', 'testing key')
+
+It will also raise errors for keys with non-ascii data.
+
+>>> r[u't\xebst'] = 'testing key'  # doctest:+ELLIPSIS
+Traceback (most recent call last):
+...
+UnicodeEncodeError: ..., HTTP response headers must be in US-ASCII format
+ 
 """
 
-from django.http import QueryDict
+from django.http import QueryDict, HttpResponse
 
 if __name__ == "__main__":
     import doctest

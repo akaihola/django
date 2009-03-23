@@ -10,14 +10,23 @@ poll application.
 It'll consist of two parts:
 
     * A public site that lets people view polls and vote in them.
-    * An admin site that lets you add, change and delete poll.
+    * An admin site that lets you add, change and delete polls.
 
 We'll assume you have `Django installed`_ already. You can tell Django is
 installed by running the Python interactive interpreter and typing
 ``import django``. If that command runs successfully, with no errors, Django is
 installed.
 
-.. _`Django installed`: http://www.djangoproject.com/documentation/install/
+.. _`Django installed`: ../install/
+
+.. admonition:: Where to get help:
+
+    If you're having trouble going through this tutorial, please post a message
+    to `django-users`_ or drop by `#django`_ on ``irc.freenode.net`` to chat
+    with other Django users who might be able to help.
+
+.. _django-users: http://groups.google.com/group/django-users
+.. _#django: irc://irc.freenode.net/django
 
 Creating a project
 ==================
@@ -31,6 +40,23 @@ application-specific settings.
 From the command line, ``cd`` into a directory where you'd like to store your
 code, then run the command ``django-admin.py startproject mysite``. This
 will create a ``mysite`` directory in your current directory.
+
+.. admonition:: Mac OS X permissions
+   
+   If you're using Mac OS X, you may see the message "permission
+   denied" when you try to run ``django-admin.py startproject``. This
+   is because, on Unix-based systems like OS X, a file must be marked
+   as "executable" before it can be run as a program. To do this, open
+   Terminal.app and navigate (using the ``cd`` command) to the directory
+   where ``django-admin.py`` is installed, then run the command
+   ``chmod +x django-admin.py``.
+
+.. note::
+
+    You'll need to avoid naming projects after built-in Python or Django
+    components. In particular, this means you should avoid using names like
+    ``django`` (which will conflict with Django itself) or ``site`` (which
+    conflicts with a built-in Python package).
 
 (``django-admin.py`` should be on your system path if you installed Django via
 ``python setup.py``. If it's not on your path, you can find it in
@@ -108,7 +134,7 @@ It worked!
 
     Full docs for the development server are at `django-admin documentation`_.
 
-.. _django-admin documentation: http://www.djangoproject.com/documentation/django_admin/
+.. _django-admin documentation: ../django-admin/
 
 Database setup
 --------------
@@ -117,21 +143,26 @@ Now, edit ``settings.py``. It's a normal Python module with module-level
 variables representing Django settings. Change these settings to match your
 database's connection parameters:
 
-    * ``DATABASE_ENGINE`` -- Either 'postgresql', 'mysql' or 'sqlite3'.
-      More coming soon.
+    * ``DATABASE_ENGINE`` -- Either 'postgresql_psycopg2', 'mysql' or 'sqlite3'.
+      Other backends are `also available`_.
     * ``DATABASE_NAME`` -- The name of your database, or the full (absolute)
-      path to the database file if you're using SQLite.
+      path to the database file if you're using SQLite. 
     * ``DATABASE_USER`` -- Your database username (not used for SQLite).
     * ``DATABASE_PASSWORD`` -- Your database password (not used for SQLite).
     * ``DATABASE_HOST`` -- The host your database is on. Leave this as an
       empty string if your database server is on the same physical machine
       (not used for SQLite).
 
+.. _also available: ../settings/
+
 .. admonition:: Note
 
     If you're using PostgreSQL or MySQL, make sure you've created a database by
     this point. Do that with "``CREATE DATABASE database_name;``" within your
     database's interactive prompt.
+
+    If you're using SQLite, you don't need to create anything beforehand - the
+    database file will be created automatically when it is needed.
 
 While you're editing ``settings.py``, take note of the ``INSTALLED_APPS``
 setting towards the bottom of the file. That variable holds the names of all
@@ -233,13 +264,29 @@ These concepts are represented by simple Python classes. Edit the
     from django.db import models
 
     class Poll(models.Model):
-        question = models.CharField(maxlength=200)
+        question = models.CharField(max_length=200)
         pub_date = models.DateTimeField('date published')
 
     class Choice(models.Model):
         poll = models.ForeignKey(Poll)
-        choice = models.CharField(maxlength=200)
+        choice = models.CharField(max_length=200)
         votes = models.IntegerField()
+
+.. admonition:: Errors about ``max_length``
+
+   If Django gives you an error message saying that ``max_length`` is
+   not a valid argument, you're most likely using an old version of
+   Django. (This version of the tutorial is written for the latest
+   development version of Django.) If you're using a Subversion checkout
+   of Django's development version (see `the installation docs`_ for
+   more information), you shouldn't have any problems.
+
+   If you want to stick with an older version of Django, you'll want to
+   switch to `the Django 0.96 tutorial`_, because this tutorial covers
+   several features that only exist in the Django development version.
+
+.. _the installation docs: ../install/
+.. _the Django 0.96 tutorial: ../0.96/tutorial01/
 
 The code is straightforward. Each model is represented by a class that
 subclasses ``django.db.models.Model``. Each model has a number of class
@@ -261,7 +308,7 @@ name for ``Poll.pub_date``. For all other fields in this model, the field's
 machine-readable name will suffice as its human-readable name.
 
 Some ``Field`` classes have required elements. ``CharField``, for example,
-requires that you give it a ``maxlength``. That's used not only in the database
+requires that you give it a ``max_length``. That's used not only in the database
 schema, but in validation, as we'll soon see.
 
 Finally, note a relationship is defined, using ``models.ForeignKey``. That tells
@@ -303,7 +350,8 @@ Now Django knows ``mysite`` includes the ``polls`` app. Let's run another comman
 
     python manage.py sql polls
 
-You should see the following (the CREATE TABLE SQL statements for the polls app)::
+You should see something similar to the following (the CREATE TABLE SQL statements
+for the polls app)::
 
     BEGIN;
     CREATE TABLE "polls_poll" (
@@ -320,6 +368,8 @@ You should see the following (the CREATE TABLE SQL statements for the polls app)
     COMMIT;
 
 Note the following:
+
+    * The exact output will vary depending on the database you are using.
 
     * Table names are automatically generated by combining the name of the app
       (``polls``) and the lowercase name of the model -- ``poll`` and
@@ -339,18 +389,19 @@ Note the following:
       quotes. The author of this tutorial runs PostgreSQL, so the example
       output is in PostgreSQL syntax.
 
-    * The `sql` command doesn't actually run the SQL in your database - it just
+    * The ``sql`` command doesn't actually run the SQL in your database - it just
       prints it to the screen so that you can see what SQL Django thinks is required.
       If you wanted to, you could copy and paste this SQL into your database prompt.
       However, as we will see shortly, Django provides an easier way of committing
       the SQL to the database.
 
 If you're interested, also run the following commands:
-    * ``python manage.py validate polls`` -- Checks for any errors in the
+    * ``python manage.py validate`` -- Checks for any errors in the
       construction of your models.
 
-    * ``python manage.py sqlinitialdata polls`` -- Outputs any initial data
-      required for Django's admin framework and your models.
+    * ``python manage.py sqlcustom polls`` -- Outputs any custom SQL statements
+      (such as table modifications or constraints) that are defined for the
+      application.
 
     * ``python manage.py sqlclear polls`` -- Outputs the necessary ``DROP
       TABLE`` statements for this app, according to which tables already exist
@@ -360,7 +411,7 @@ If you're interested, also run the following commands:
       statements for this app.
 
     * ``python manage.py sqlall polls`` -- A combination of all the SQL from
-      the 'sql', 'sqlinitialdata', and 'sqlindexes' commands.
+      the 'sql', 'sqlcustom', and 'sqlindexes' commands.
 
 Looking at the output of those commands can help you understand what's actually
 happening under the hood.
@@ -378,7 +429,7 @@ as you like, and it will only ever create the tables that don't exist.
 Read the `django-admin.py documentation`_ for full information on what the
 ``manage.py`` utility can do.
 
-.. _django-admin.py documentation: http://www.djangoproject.com/documentation/django_admin/
+.. _django-admin.py documentation: ../django-admin/
 
 Playing with the API
 ====================
@@ -422,8 +473,8 @@ Once you're in the shell, explore the database API::
     []
 
     # Create a new Poll.
-    >>> from datetime import datetime
-    >>> p = Poll(question="What's up?", pub_date=datetime.now())
+    >>> import datetime
+    >>> p = Poll(question="What's up?", pub_date=datetime.datetime.now())
 
     # Save the object into the database. You have to call save() explicitly.
     >>> p.save()
@@ -439,10 +490,10 @@ Once you're in the shell, explore the database API::
     >>> p.question
     "What's up?"
     >>> p.pub_date
-    datetime.datetime(2005, 7, 15, 12, 00, 53)
+    datetime.datetime(2007, 7, 15, 12, 00, 53)
 
     # Change values by changing the attributes, then calling save().
-    >>> p.pub_date = datetime(2005, 4, 1, 0, 0)
+    >>> p.pub_date = datetime.datetime(2007, 4, 1, 0, 0)
     >>> p.save()
 
     # objects.all() displays all the polls in the database.
@@ -452,22 +503,56 @@ Once you're in the shell, explore the database API::
 
 Wait a minute. ``<Poll: Poll object>`` is, utterly, an unhelpful
 representation of this object. Let's fix that by editing the polls model (in
-the ``polls/models.py`` file) and adding a ``__str__()`` method to both
+the ``polls/models.py`` file) and adding a ``__unicode__()`` method to both
 ``Poll`` and ``Choice``::
 
     class Poll(models.Model):
         # ...
-        def __str__(self):
+        def __unicode__(self):
             return self.question
 
     class Choice(models.Model):
         # ...
-        def __str__(self):
+        def __unicode__(self):
             return self.choice
 
-It's important to add ``__str__()`` methods to your models, not only for your
-own sanity when dealing with the interactive prompt, but also because objects'
-representations are used throughout Django's automatically-generated admin.
+.. admonition:: If ``__unicode__()`` doesn't seem to work
+
+   If you add the ``__unicode__()`` method to your models and don't
+   see any change in how they're represented, you're most likely using
+   an old version of Django. (This version of the tutorial is written
+   for the latest development version of Django.) If you're using a
+   Subversion checkout of of Django's development version (see `the
+   installation docs`_ for more information), you shouldn't have any
+   problems.
+
+   If you want to stick with an older version of Django, you'll want to
+   switch to `the Django 0.96 tutorial`_, because this tutorial covers
+   several features that only exist in the Django development version.
+
+.. _the installation docs: ../install/
+.. _the Django 0.96 tutorial: ../0.96/tutorial01/
+
+It's important to add ``__unicode__()`` methods to your models, not only for
+your own sanity when dealing with the interactive prompt, but also because
+objects' representations are used throughout Django's automatically-generated
+admin.
+
+.. admonition:: Why ``__unicode__()`` and not ``__str__()``?
+
+    If you're familiar with Python, you might be in the habit of adding
+    ``__str__()`` methods to your classes, not ``__unicode__()`` methods.
+    We use ``__unicode__()`` here because Django models deal with Unicode by
+    default. All data stored in your database is converted to Unicode when it's
+    returned.
+
+    Django models have a default ``__str__()`` method that calls
+    ``__unicode__()`` and converts the result to a UTF-8 bytestring. This means
+    that ``unicode(p)`` will return a Unicode string, and ``str(p)`` will return
+    a normal string, with characters encoded as UTF-8.
+
+    If all of this is jibberish to you, just remember to add ``__unicode__()``
+    methods to your models. With any luck, things should Just Work for you.
 
 Note these are normal Python methods. Let's add a custom method, just for
 demonstration::
@@ -487,7 +572,7 @@ Let's jump back into the Python interactive shell by running
 
     >>> from mysite.polls.models import Poll, Choice
 
-    # Make sure our __str__() addition worked.
+    # Make sure our __unicode__() addition worked.
     >>> Poll.objects.all()
     [<Poll: What's up?>]
 
@@ -498,9 +583,9 @@ Let's jump back into the Python interactive shell by running
     >>> Poll.objects.filter(question__startswith='What')
     [<Poll: What's up?>]
 
-    # Get the poll whose year is 2005. Of course, if you're going through this
+    # Get the poll whose year is 2007. Of course, if you're going through this
     # tutorial in another year, change as appropriate.
-    >>> Poll.objects.get(pub_date__year=2005)
+    >>> Poll.objects.get(pub_date__year=2007)
     <Poll: What's up?>
 
     >>> Poll.objects.get(id=2)
@@ -541,9 +626,9 @@ Let's jump back into the Python interactive shell by running
 
     # The API automatically follows relationships as far as you need.
     # Use double underscores to separate relationships.
-    # This works as many levels deep as you want. There's no limit.
-    # Find all Choices for any poll whose pub_date is in 2005.
-    >>> Choice.objects.filter(poll__pub_date__year=2005)
+    # This works as many levels deep as you want; there's no limit.
+    # Find all Choices for any poll whose pub_date is in 2007.
+    >>> Choice.objects.filter(poll__pub_date__year=2007)
     [<Choice: Not much>, <Choice: The sky>, <Choice: Just hacking again>]
 
     # Let's delete one of the choices. Use delete() for that.
@@ -555,5 +640,5 @@ For full details on the database API, see our `Database API reference`_.
 When you're comfortable with the API, read `part 2 of this tutorial`_ to get
 Django's automatic admin working.
 
-.. _Database API reference: http://www.djangoproject.com/documentation/db_api/
-.. _part 2 of this tutorial: http://www.djangoproject.com/documentation/tutorial2/
+.. _Database API reference: ../db-api/
+.. _part 2 of this tutorial: ../tutorial02/

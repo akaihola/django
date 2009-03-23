@@ -1,10 +1,16 @@
 import datetime
+import md5
 from time import time
+
+try:
+    import decimal
+except ImportError:
+    from django.utils import _decimal as decimal    # for Python 2.3
 
 class CursorDebugWrapper(object):
     def __init__(self, cursor, db):
         self.cursor = cursor
-        self.db = db
+        self.db = db # Instance of a BaseDatabaseWrapper subclass
 
     def execute(self, sql, params=()):
         start = time()
@@ -12,12 +18,9 @@ class CursorDebugWrapper(object):
             return self.cursor.execute(sql, params)
         finally:
             stop = time()
-            # If params was a list, convert it to a tuple, because string
-            # formatting with '%' only works with tuples or dicts.
-            if not isinstance(params, (tuple, dict)):
-                params = tuple(params)
+            sql = self.db.ops.last_executed_query(self.cursor, sql, params)
             self.db.queries.append({
-                'sql': sql % params,
+                'sql': sql,
                 'time': "%.3f" % (stop - start),
             })
 
@@ -28,15 +31,18 @@ class CursorDebugWrapper(object):
         finally:
             stop = time()
             self.db.queries.append({
-                'sql': 'MANY: ' + sql + ' ' + str(tuple(param_list)),
+                'sql': '%s times: %s' % (len(param_list), sql),
                 'time': "%.3f" % (stop - start),
             })
 
     def __getattr__(self, attr):
-        if self.__dict__.has_key(attr):
+        if attr in self.__dict__:
             return self.__dict__[attr]
         else:
             return getattr(self.cursor, attr)
+
+    def __iter__(self):
+        return iter(self.cursor)
 
 ###############################################
 # Converters from database (string) to Python #
@@ -85,6 +91,11 @@ def typecast_boolean(s):
     if not s: return False
     return str(s)[0].lower() == 't'
 
+def typecast_decimal(s):
+    if s is None or s == '':
+        return None
+    return decimal.Decimal(s)
+
 ###############################################
 # Converters from Python to database (string) #
 ###############################################
@@ -92,29 +103,17 @@ def typecast_boolean(s):
 def rev_typecast_boolean(obj, d):
     return obj and '1' or '0'
 
-##################################################################################
-# Helper functions for dictfetch* for databases that don't natively support them #
-##################################################################################
-
-def _dict_helper(desc, row):
-    "Returns a dictionary for the given cursor.description and result row."
-    return dict(zip([col[0] for col in desc], row))
-
-def dictfetchone(cursor):
-    "Returns a row from the cursor as a dict"
-    row = cursor.fetchone()
-    if not row:
+def rev_typecast_decimal(d):
+    if d is None:
         return None
-    return _dict_helper(cursor.description, row)
+    return str(d)
 
-def dictfetchmany(cursor, number):
-    "Returns a certain number of rows from a cursor as a dict"
-    desc = cursor.description
-    for row in cursor.fetchmany(number):
-        yield _dict_helper(desc, row)
+def truncate_name(name, length=None):
+    """Shortens a string to a repeatable mangled version with the given length.
+    """
+    if length is None or len(name) <= length:
+        return name
 
-def dictfetchall(cursor):
-    "Returns all rows from a cursor as a dict"
-    desc = cursor.description
-    for row in cursor.fetchall():
-        yield _dict_helper(desc, row)
+    hash = md5.md5(name).hexdigest()[:4]
+
+    return '%s%s' % (name[:length-4], hash)

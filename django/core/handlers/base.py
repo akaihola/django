@@ -1,9 +1,18 @@
-from django.core import signals
-from django.dispatch import dispatcher
-from django import http
 import sys
 
+from django import http
+from django.core import signals
+from django.dispatch import dispatcher
+
 class BaseHandler(object):
+    # Changes that are always applied to a response (in this order).
+    response_fixes = [
+        http.fix_location_header,
+        http.conditional_content_removal,
+        http.fix_IE_for_attach,
+        http.fix_IE_for_vary,
+    ]
+
     def __init__(self):
         self._request_middleware = self._view_middleware = self._response_middleware = self._exception_middleware = None
 
@@ -51,7 +60,6 @@ class BaseHandler(object):
     def get_response(self, request):
         "Returns an HttpResponse object for the given HttpRequest"
         from django.core import exceptions, urlresolvers
-        from django.core.mail import mail_admins
         from django.conf import settings
 
         # Apply request middleware
@@ -104,28 +112,58 @@ class BaseHandler(object):
         except exceptions.PermissionDenied:
             return http.HttpResponseForbidden('<h1>Permission denied</h1>')
         except SystemExit:
-            pass # See http://code.djangoproject.com/ticket/1023
+            # Allow sys.exit() to actually exit. See tickets #1023 and #4701
+            raise
         except: # Handle everything else, including SuspiciousOperation, etc.
-            if settings.DEBUG:
-                from django.views import debug
-                return debug.technical_500_response(request, *sys.exc_info())
-            else:
-                # Get the exception info now, in case another exception is thrown later.
-                exc_info = sys.exc_info()
-                receivers = dispatcher.send(signal=signals.got_request_exception)
-                # When DEBUG is False, send an error message to the admins.
-                subject = 'Error (%s IP): %s' % ((request.META.get('REMOTE_ADDR') in settings.INTERNAL_IPS and 'internal' or 'EXTERNAL'), request.path)
-                try:
-                    request_repr = repr(request)
-                except:
-                    request_repr = "Request repr() unavailable"
-                message = "%s\n\n%s" % (self._get_traceback(exc_info), request_repr)
-                mail_admins(subject, message, fail_silently=True)
-                # Return an HttpResponse that displays a friendly error message.
-                callback, param_dict = resolver.resolve500()
-                return callback(request, **param_dict)
+            # Get the exception info now, in case another exception is thrown later.
+            exc_info = sys.exc_info()
+            receivers = dispatcher.send(signal=signals.got_request_exception, request=request)
+
+            if settings.DEBUG_PROPAGATE_EXCEPTIONS:
+                raise
+            return self.handle_uncaught_exception(request, resolver, exc_info)
+
+    def handle_uncaught_exception(self, request, resolver, exc_info):
+        """
+        Processing for any otherwise uncaught exceptions (those that will
+        generate HTTP 500 responses). Can be overridden by subclasses who want
+        customised 500 handling.
+
+        Be *very* careful when overriding this because the error could be
+        caused by anything, so assuming something like the database is always
+        available would be an error.
+        """
+        from django.conf import settings
+        from django.core.mail import mail_admins
+
+        if settings.DEBUG:
+            from django.views import debug
+            return debug.technical_500_response(request, *exc_info)
+
+        # When DEBUG is False, send an error message to the admins.
+        subject = 'Error (%s IP): %s' % ((request.META.get('REMOTE_ADDR') in settings.INTERNAL_IPS and 'internal' or 'EXTERNAL'), request.path)
+        try:
+            request_repr = repr(request)
+        except:
+            request_repr = "Request repr() unavailable"
+        message = "%s\n\n%s" % (self._get_traceback(exc_info), request_repr)
+        mail_admins(subject, message, fail_silently=True)
+        # Return an HttpResponse that displays a friendly error message.
+        callback, param_dict = resolver.resolve500()
+        return callback(request, **param_dict)
 
     def _get_traceback(self, exc_info=None):
         "Helper function to return the traceback as a string"
         import traceback
         return '\n'.join(traceback.format_exception(*(exc_info or sys.exc_info())))
+
+    def apply_response_fixes(self, request, response):
+        """
+        Applies each of the functions in self.response_fixes to the request and
+        response, modifying the response in the process. Returns the new
+        response.
+        """
+        for func in self.response_fixes:
+            response = func(request, response)
+        return response
+

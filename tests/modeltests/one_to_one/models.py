@@ -6,37 +6,45 @@ To define a one-to-one relationship, use ``OneToOneField()``.
 In this example, a ``Place`` optionally can be a ``Restaurant``.
 """
 
-from django.db import models
+from django.db import models, connection
 
 class Place(models.Model):
-    name = models.CharField(maxlength=50)
-    address = models.CharField(maxlength=80)
+    name = models.CharField(max_length=50)
+    address = models.CharField(max_length=80)
 
-    def __str__(self):
-        return "%s the place" % self.name
+    def __unicode__(self):
+        return u"%s the place" % self.name
 
 class Restaurant(models.Model):
-    place = models.OneToOneField(Place)
+    place = models.OneToOneField(Place, primary_key=True)
     serves_hot_dogs = models.BooleanField()
     serves_pizza = models.BooleanField()
 
-    def __str__(self):
-        return "%s the restaurant" % self.place.name
+    def __unicode__(self):
+        return u"%s the restaurant" % self.place.name
 
 class Waiter(models.Model):
     restaurant = models.ForeignKey(Restaurant)
-    name = models.CharField(maxlength=50)
+    name = models.CharField(max_length=50)
 
-    def __str__(self):
-        return "%s the waiter at %s" % (self.name, self.restaurant)
+    def __unicode__(self):
+        return u"%s the waiter at %s" % (self.name, self.restaurant)
 
 class ManualPrimaryKey(models.Model):
-    primary_key = models.CharField(maxlength=10, primary_key=True)
-    name = models.CharField(maxlength = 50)
+    primary_key = models.CharField(max_length=10, primary_key=True)
+    name = models.CharField(max_length = 50)
 
 class RelatedModel(models.Model):
     link = models.OneToOneField(ManualPrimaryKey)
-    name = models.CharField(maxlength = 50)
+    name = models.CharField(max_length = 50)
+
+class MultiModel(models.Model):
+    link1 = models.OneToOneField(Place)
+    link2 = models.OneToOneField(ManualPrimaryKey)
+    name = models.CharField(max_length=50)
+
+    def __unicode__(self):
+        return u"Multimodel %s" % self.name
 
 __test__ = {'API_TESTS':"""
 # Create a couple of Places.
@@ -63,8 +71,8 @@ Traceback (most recent call last):
     ...
 DoesNotExist: Restaurant matching query does not exist.
 
-# Set the place using assignment notation. Because place is the primary key on Restaurant,
-# the save will create a new restaurant
+# Set the place using assignment notation. Because place is the primary key on
+# Restaurant, the save will create a new restaurant
 >>> r.place = p2
 >>> r.save()
 >>> p2.restaurant
@@ -72,11 +80,8 @@ DoesNotExist: Restaurant matching query does not exist.
 >>> r.place
 <Place: Ace Hardware the place>
 
-# Set the place back again, using assignment in the reverse direction
-# Need to reget restaurant object first, because the reverse set
-# can't update the existing restaurant instance
+# Set the place back again, using assignment in the reverse direction.
 >>> p1.restaurant = r
->>> r.save()
 >>> p1.restaurant
 <Restaurant: Demon Dogs the restaurant>
 
@@ -86,8 +91,7 @@ DoesNotExist: Restaurant matching query does not exist.
 
 # Restaurant.objects.all() just returns the Restaurants, not the Places.
 # Note that there are two restaurants - Ace Hardware the Restaurant was created
-# in the call to r.place = p2. This means there are multiple restaurants referencing
-# a single place...
+# in the call to r.place = p2.
 >>> Restaurant.objects.all()
 [<Restaurant: Demon Dogs the restaurant>, <Restaurant: Ace Hardware the restaurant>]
 
@@ -165,4 +169,22 @@ DoesNotExist: Restaurant matching query does not exist.
 >>> o1.save()
 >>> o2 = RelatedModel(link=o1, name="secondary")
 >>> o2.save()
+
+# You can have multiple one-to-one fields on a model, too.
+>>> x1 = MultiModel(link1=p1, link2=o1, name="x1")
+>>> x1.save()
+>>> o1.multimodel
+<MultiModel: Multimodel x1>
+
+# This will fail because each one-to-one field must be unique (and link2=o1 was
+# used for x1, above).
+>>> MultiModel(link1=p2, link2=o1, name="x1").save()
+Traceback (most recent call last):
+    ...
+IntegrityError: ...
+
+# Because the unittests all use a single connection, we need to force a
+# reconnect here to ensure the connection is clean (after the previous
+# IntegrityError).
+>>> connection.close()
 """}

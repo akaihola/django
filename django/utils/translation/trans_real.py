@@ -1,9 +1,13 @@
-"Translation helper functions"
+"""Translation helper functions."""
 
-import os, re, sys
+import locale
+import os
+import re
+import sys
 import gettext as gettext_module
 from cStringIO import StringIO
-from django.utils.functional import lazy
+
+from django.utils.safestring import mark_safe, SafeData
 
 try:
     import threading
@@ -25,20 +29,33 @@ _active = {}
 # The default translation is based on the settings file.
 _default = None
 
-# This is a cache for accept-header to translation object mappings to prevent
-# the accept parser to run multiple times for one user.
+# This is a cache for normalized accept-header languages to prevent multiple
+# file lookups when checking the same locale on repeated requests.
 _accepted = {}
 
-def to_locale(language):
-    "Turns a language name (en-us) into a locale name (en_US)."
+# Format of Accept-Language header values. From RFC 2616, section 14.4 and 3.9.
+accept_language_re = re.compile(r'''
+        ([A-Za-z]{1,8}(?:-[A-Za-z]{1,8})*|\*)   # "en", "en-au", "x-y-z", "*"
+        (?:;q=(0(?:\.\d{,3})?|1(?:.0{,3})?))?   # Optional "q=1.00", "q=0.8"
+        (?:\s*,\s*|$)                            # Multiple accepts per header.
+        ''', re.VERBOSE)
+
+def to_locale(language, to_lower=False):
+    """
+    Turns a language name (en-us) into a locale name (en_US). If 'to_lower' is
+    True, the last component is lower-cased (en_us).
+    """
     p = language.find('-')
     if p >= 0:
-        return language[:p].lower()+'_'+language[p+1:].upper()
+        if to_lower:
+            return language[:p].lower()+'_'+language[p+1:].lower()
+        else:
+            return language[:p].lower()+'_'+language[p+1:].upper()
     else:
         return language.lower()
 
 def to_language(locale):
-    "Turns a locale name (en_US) into a language name (en-us)."
+    """Turns a locale name (en_US) into a language name (en-us)."""
     p = locale.find('_')
     if p >= 0:
         return locale[:p].lower()+'-'+locale[p+1:].lower()
@@ -58,10 +75,10 @@ class DjangoTranslation(gettext_module.GNUTranslations):
         # the output charset. Before 2.4, the output charset is
         # identical with the translation file charset.
         try:
-            self.set_output_charset(settings.DEFAULT_CHARSET)
+            self.set_output_charset('utf-8')
         except AttributeError:
             pass
-        self.django_output_charset = settings.DEFAULT_CHARSET
+        self.django_output_charset = 'utf-8'
         self.__language = '??'
 
     def merge(self, other):
@@ -144,6 +161,15 @@ def translation(language):
 
         res = _translation(globalpath)
 
+        # We want to ensure that, for example,  "en-gb" and "en-us" don't share
+        # the same translation object (thus, merging en-us with a local update
+        # doesn't affect en-gb), even though they will both use the core "en"
+        # translation. So we have to subvert Python's internal gettext caching.
+        base_lang = lambda x: x.split('-', 1)[0]
+        if base_lang(lang) in [base_lang(trans) for trans in _translations]:
+            res._info = res._info.copy()
+            res._catalog = res._catalog.copy()
+
         def _merge(path):
             t = _translation(path)
             if t is not None:
@@ -153,10 +179,9 @@ def translation(language):
                     res.merge(t)
             return res
 
-        if hasattr(settings, 'LOCALE_PATHS'):
-            for localepath in settings.LOCALE_PATHS:
-                if os.path.isdir(localepath):
-                    res = _merge(localepath)
+        for localepath in settings.LOCALE_PATHS:
+            if os.path.isdir(localepath):
+                res = _merge(localepath)
 
         if projectpath and os.path.isdir(projectpath):
             res = _merge(projectpath)
@@ -200,11 +225,19 @@ def deactivate():
     will resolve against the default translation object, again.
     """
     global _active
-    if _active.has_key(currentThread()):
+    if currentThread() in _active:
         del _active[currentThread()]
 
+def deactivate_all():
+    """
+    Makes the active translation object a NullTranslations() instance. This is
+    useful when we want delayed translations to appear as the original string
+    for some reason.
+    """
+    _active[currentThread()] = gettext_module.NullTranslations()
+
 def get_language():
-    "Returns the currently selected language."
+    """Returns the currently selected language."""
     t = _active.get(currentThread(), None)
     if t is not None:
         try:
@@ -226,7 +259,7 @@ def get_language_bidi():
 
 def catalog():
     """
-    This function returns the current active catalog for further processing.
+    Returns the current active catalog for further processing.
     This can be used if you need to modify the catalog or want to access the
     whole message catalog instead of just translating one string.
     """
@@ -239,52 +272,72 @@ def catalog():
         _default = translation(settings.LANGUAGE_CODE)
     return _default
 
-def gettext(message):
+def do_translate(message, translation_function):
     """
-    This function will be patched into the builtins module to provide the _
-    helper function. It will use the current thread as a discriminator to find
-    the translation object to use. If no current translation is activated, the
+    Translates 'message' using the given 'translation_function' name -- which
+    will be either gettext or ugettext. It uses the current thread to find the
+    translation object to use. If no current translation is activated, the
     message will be run through the default translation object.
     """
     global _default, _active
     t = _active.get(currentThread(), None)
     if t is not None:
-        return t.gettext(message)
-    if _default is None:
-        from django.conf import settings
-        _default = translation(settings.LANGUAGE_CODE)
-    return _default.gettext(message)
+        result = getattr(t, translation_function)(message)
+    else:
+        if _default is None:
+            from django.conf import settings
+            _default = translation(settings.LANGUAGE_CODE)
+        result = getattr(_default, translation_function)(message)
+    if isinstance(message, SafeData):
+        return mark_safe(result)
+    return result
+
+def gettext(message):
+    return do_translate(message, 'gettext')
+
+def ugettext(message):
+    return do_translate(message, 'ugettext')
 
 def gettext_noop(message):
     """
     Marks strings for translation but doesn't translate them now. This can be
     used to store strings in global variables that should stay in the base
-    language (because they might be used externally) and will be translated later.
+    language (because they might be used externally) and will be translated
+    later.
     """
     return message
 
-def ngettext(singular, plural, number):
-    """
-    Returns the translation of either the singular or plural, based on the number.
-    """
+def do_ntranslate(singular, plural, number, translation_function):
     global _default, _active
 
     t = _active.get(currentThread(), None)
     if t is not None:
-        return t.ngettext(singular, plural, number)
+        return getattr(t, translation_function)(singular, plural, number)
     if _default is None:
         from django.conf import settings
         _default = translation(settings.LANGUAGE_CODE)
-    return _default.ngettext(singular, plural, number)
+    return getattr(_default, translation_function)(singular, plural, number)
 
-gettext_lazy = lazy(gettext, str)
-ngettext_lazy = lazy(ngettext, str)
+def ngettext(singular, plural, number):
+    """
+    Returns a UTF-8 bytestring of the translation of either the singular or
+    plural, based on the number.
+    """
+    return do_ntranslate(singular, plural, number, 'ngettext')
+
+def ungettext(singular, plural, number):
+    """
+    Returns a unicode strings of the translation of either the singular or
+    plural, based on the number.
+    """
+    return do_ntranslate(singular, plural, number, 'ungettext')
 
 def check_for_language(lang_code):
     """
-    Checks whether there is a global language file for the given language code.
-    This is used to decide whether a user-provided language is available. This is
-    only used for language codes from either the cookies or session.
+    Checks whether there is a global language file for the given language
+    code. This is used to decide whether a user-provided language is
+    available. This is only used for language codes from either the cookies or
+    session.
     """
     from django.conf import settings
     globalpath = os.path.join(os.path.dirname(sys.modules[settings.__module__].__file__), 'locale')
@@ -295,9 +348,10 @@ def check_for_language(lang_code):
 
 def get_language_from_request(request):
     """
-    Analyzes the request to find what language the user wants the system to show.
-    Only languages listed in settings.LANGUAGES are taken into account. If the user
-    requests a sublanguage where we have a main language, we send out the main language.
+    Analyzes the request to find what language the user wants the system to
+    show. Only languages listed in settings.LANGUAGES are taken into account.
+    If the user requests a sublanguage where we have a main language, we send
+    out the main language.
     """
     global _accepted
     from django.conf import settings
@@ -309,59 +363,55 @@ def get_language_from_request(request):
         if lang_code in supported and lang_code is not None and check_for_language(lang_code):
             return lang_code
 
-    lang_code = request.COOKIES.get('django_language', None)
-    if lang_code in supported and lang_code is not None and check_for_language(lang_code):
+    lang_code = request.COOKIES.get(settings.LANGUAGE_COOKIE_NAME)
+    if lang_code and lang_code in supported and check_for_language(lang_code):
         return lang_code
 
-    accept = request.META.get('HTTP_ACCEPT_LANGUAGE', None)
-    if accept is not None:
+    accept = request.META.get('HTTP_ACCEPT_LANGUAGE', '')
+    for accept_lang, unused in parse_accept_lang_header(accept):
+        if accept_lang == '*':
+            break
 
-        t = _accepted.get(accept, None)
-        if t is not None:
-            return t
+        # We have a very restricted form for our language files (no encoding
+        # specifier, since they all must be UTF-8 and only one possible
+        # language each time. So we avoid the overhead of gettext.find() and
+        # work out the MO file manually.
 
-        def _parsed(el):
-            p = el.find(';q=')
-            if p >= 0:
-                lang = el[:p].strip()
-                order = int(float(el[p+3:].strip())*100)
-            else:
-                lang = el
-                order = 100
-            p = lang.find('-')
-            if p >= 0:
-                mainlang = lang[:p]
-            else:
-                mainlang = lang
-            return (lang, mainlang, order)
+        # 'normalized' is the root name of the locale in POSIX format (which is
+        # the format used for the directories holding the MO files).
+        normalized = locale.locale_alias.get(to_locale(accept_lang, True))
+        if not normalized:
+            continue
+        # Remove the default encoding from locale_alias.
+        normalized = normalized.split('.')[0]
 
-        langs = [_parsed(el) for el in accept.split(',')]
-        langs.sort(lambda a,b: -1*cmp(a[2], b[2]))
+        if normalized in _accepted:
+            # We've seen this locale before and have an MO file for it, so no
+            # need to check again.
+            return _accepted[normalized]
 
-        for lang, mainlang, order in langs:
-            if lang in supported or mainlang in supported:
-                langfile = gettext_module.find('django', globalpath, [to_locale(lang)])
-                if langfile:
-                    # reconstruct the actual language from the language
-                    # filename, because otherwise we might incorrectly
-                    # report de_DE if we only have de available, but
-                    # did find de_DE because of language normalization
-                    lang = langfile[len(globalpath):].split(os.path.sep)[1]
-                    _accepted[accept] = lang
-                    return lang
+        for lang, dirname in ((accept_lang, normalized),
+                (accept_lang.split('-')[0], normalized.split('_')[0])):
+            if lang not in supported:
+                continue
+            langfile = os.path.join(globalpath, dirname, 'LC_MESSAGES',
+                    'django.mo')
+            if os.path.exists(langfile):
+                _accepted[normalized] = lang
+            return lang
 
     return settings.LANGUAGE_CODE
 
 def get_date_formats():
     """
-    This function checks whether translation files provide a translation for some
-    technical message ID to store date and time formats. If it doesn't contain
-    one, the formats provided in the settings will be used.
+    Checks whether translation files provide a translation for some technical
+    message ID to store date and time formats. If it doesn't contain one, the
+    formats provided in the settings will be used.
     """
     from django.conf import settings
-    date_format = _('DATE_FORMAT')
-    datetime_format = _('DATETIME_FORMAT')
-    time_format = _('TIME_FORMAT')
+    date_format = ugettext('DATE_FORMAT')
+    datetime_format = ugettext('DATETIME_FORMAT')
+    time_format = ugettext('TIME_FORMAT')
     if date_format == 'DATE_FORMAT':
         date_format = settings.DATE_FORMAT
     if datetime_format == 'DATETIME_FORMAT':
@@ -372,25 +422,18 @@ def get_date_formats():
 
 def get_partial_date_formats():
     """
-    This function checks whether translation files provide a translation for some
-    technical message ID to store partial date formats. If it doesn't contain
-    one, the formats provided in the settings will be used.
+    Checks whether translation files provide a translation for some technical
+    message ID to store partial date formats. If it doesn't contain one, the
+    formats provided in the settings will be used.
     """
     from django.conf import settings
-    year_month_format = _('YEAR_MONTH_FORMAT')
-    month_day_format = _('MONTH_DAY_FORMAT')
+    year_month_format = ugettext('YEAR_MONTH_FORMAT')
+    month_day_format = ugettext('MONTH_DAY_FORMAT')
     if year_month_format == 'YEAR_MONTH_FORMAT':
         year_month_format = settings.YEAR_MONTH_FORMAT
     if month_day_format == 'MONTH_DAY_FORMAT':
         month_day_format = settings.MONTH_DAY_FORMAT
     return year_month_format, month_day_format
-
-def install():
-    """
-    Installs the gettext function as the default translation function under
-    the name '_'.
-    """
-    __builtins__['_'] = gettext
 
 dot_re = re.compile(r'\S')
 def blankout(src, char):
@@ -405,6 +448,7 @@ block_re = re.compile(r"""^\s*blocktrans(?:\s+|$)""")
 endblock_re = re.compile(r"""^\s*endblocktrans$""")
 plural_re = re.compile(r"""^\s*plural$""")
 constant_re = re.compile(r"""_\(((?:".*?")|(?:'.*?'))\)""")
+
 def templatize(src):
     """
     Turns a Django template into something that is understood by xgettext. It
@@ -440,7 +484,7 @@ def templatize(src):
                 elif pluralmatch:
                     inplural = True
                 else:
-                    raise SyntaxError, "Translation blocks must not include other block tags: %s" % t.contents
+                    raise SyntaxError("Translation blocks must not include other block tags: %s" % t.contents)
             elif t.token_type == TOKEN_VAR:
                 if inplural:
                     plural.append('%%(%s)s' % t.contents)
@@ -462,6 +506,8 @@ def templatize(src):
                     elif g[0] == "'": g = g.strip("'")
                     out.write(' gettext(%r) ' % g)
                 elif bmatch:
+                    for fmatch in constant_re.findall(t.contents):
+                        out.write(' _(%s) ' % fmatch)
                     intrans = True
                     inplural = False
                     singular = []
@@ -485,12 +531,22 @@ def templatize(src):
                 out.write(blankout(t.contents, 'X'))
     return out.getvalue()
 
-def string_concat(*strings):
-    """"
-    lazy variant of string concatenation, needed for translations that are
-    constructed from multiple parts. Handles lazy strings and non-strings by
-    first turning all arguments to strings, before joining them.
+def parse_accept_lang_header(lang_string):
     """
-    return ''.join([str(el) for el in strings])
+    Parses the lang_string, which is the body of an HTTP Accept-Language
+    header, and returns a list of (lang, q-value), ordered by 'q' values.
 
-string_concat = lazy(string_concat, str)
+    Any format errors in lang_string results in an empty list being returned.
+    """
+    result = []
+    pieces = accept_language_re.split(lang_string)
+    if pieces[-1]:
+        return []
+    for i in range(0, len(pieces) - 1, 3):
+        first, lang, priority = pieces[i : i + 3]
+        if first:
+            return []
+        priority = priority and float(priority) or 1.0
+        result.append((lang, priority))
+    result.sort(lambda x, y: -cmp(x[1], y[1]))
+    return result

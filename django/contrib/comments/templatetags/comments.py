@@ -5,6 +5,7 @@ from django import template
 from django.template import loader
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.contenttypes.models import ContentType
+from django.utils.encoding import smart_str
 import re
 
 register = template.Library()
@@ -18,6 +19,8 @@ class CommentFormNode(template.Node):
         ratings_optional=False, ratings_required=False, rating_options='',
         is_public=True):
         self.content_type = content_type
+        if obj_id_lookup_var is not None:
+            obj_id_lookup_var = template.Variable(obj_id_lookup_var)
         self.obj_id_lookup_var, self.obj_id, self.free = obj_id_lookup_var, obj_id, free
         self.photos_optional, self.photos_required = photos_optional, photos_required
         self.ratings_optional, self.ratings_required = ratings_optional, ratings_required
@@ -25,12 +28,13 @@ class CommentFormNode(template.Node):
         self.is_public = is_public
 
     def render(self, context):
+        from django.conf import settings
         from django.utils.text import normalize_newlines
         import base64
         context.push()
         if self.obj_id_lookup_var is not None:
             try:
-                self.obj_id = template.resolve_variable(self.obj_id_lookup_var, context)
+                self.obj_id = self.obj_id_lookup_var.resolve(context)
             except template.VariableDoesNotExist:
                 return ''
             # Validate that this object ID is valid for this content-type.
@@ -64,6 +68,7 @@ class CommentFormNode(template.Node):
             if self.rating_options:
                 context['rating_range'], context['rating_choices'] = Comment.objects.get_rating_options(self.rating_options)
             context['hash'] = Comment.objects.get_security_hash(context['options'], context['photo_options'], context['rating_options'], context['target'])
+            context['logout_url'] = settings.LOGOUT_URL
             default_form = loader.get_template(COMMENT_FORM)
         output = default_form.render(context)
         context.pop()
@@ -72,6 +77,8 @@ class CommentFormNode(template.Node):
 class CommentCountNode(template.Node):
     def __init__(self, package, module, context_var_name, obj_id, var_name, free):
         self.package, self.module = package, module
+        if context_var_name is not None:
+            context_var_name = template.Variable(context_var_name)
         self.context_var_name, self.obj_id = context_var_name, obj_id
         self.var_name, self.free = var_name, free
 
@@ -79,7 +86,7 @@ class CommentCountNode(template.Node):
         from django.conf import settings
         manager = self.free and FreeComment.objects or Comment.objects
         if self.context_var_name is not None:
-            self.obj_id = template.resolve_variable(self.context_var_name, context)
+            self.obj_id = self.context_var_name.resolve(context)
         comment_count = manager.filter(object_id__exact=self.obj_id,
             content_type__app_label__exact=self.package,
             content_type__model__exact=self.module, site__id__exact=settings.SITE_ID).count()
@@ -89,6 +96,8 @@ class CommentCountNode(template.Node):
 class CommentListNode(template.Node):
     def __init__(self, package, module, context_var_name, obj_id, var_name, free, ordering, extra_kwargs=None):
         self.package, self.module = package, module
+        if context_var_name is not None:
+            context_var_name = template.Variable(context_var_name)
         self.context_var_name, self.obj_id = context_var_name, obj_id
         self.var_name, self.free = var_name, free
         self.ordering = ordering
@@ -99,7 +108,7 @@ class CommentListNode(template.Node):
         get_list_function = self.free and FreeComment.objects.filter or Comment.objects.get_list_with_karma
         if self.context_var_name is not None:
             try:
-                self.obj_id = template.resolve_variable(self.context_var_name, context)
+                self.obj_id = self.context_var_name.resolve(context)
             except template.VariableDoesNotExist:
                 return ''
         kwargs = {
@@ -109,12 +118,12 @@ class CommentListNode(template.Node):
             'site__id__exact': settings.SITE_ID,
         }
         kwargs.update(self.extra_kwargs)
-        if not self.free and settings.COMMENTS_BANNED_USERS_GROUP:
-            kwargs['select'] = {'is_hidden': 'user_id IN (SELECT user_id FROM auth_user_groups WHERE group_id = %s)' % settings.COMMENTS_BANNED_USERS_GROUP}
         comment_list = get_list_function(**kwargs).order_by(self.ordering + 'submit_date').select_related()
+        if not self.free and settings.COMMENTS_BANNED_USERS_GROUP:
+            comment_list = comment_list.extra(select={'is_hidden': 'user_id IN (SELECT user_id FROM auth_user_groups WHERE group_id = %s)' % settings.COMMENTS_BANNED_USERS_GROUP})
 
         if not self.free:
-            if context.has_key('user') and context['user'].is_authenticated():
+            if 'user' in context and context['user'].is_authenticated():
                 user_id = context['user'].id
                 context['user_can_moderate_comments'] = Comment.objects.user_is_moderator(context['user'])
             else:
@@ -172,6 +181,7 @@ class DoCommentForm:
             if tokens[4] != 'with':
                 raise template.TemplateSyntaxError, "Fourth argument in %r tag must be 'with'" % tokens[0]
             for option, args in zip(tokens[5::2], tokens[6::2]):
+                option = smart_str(option)
                 if option in ('photos_optional', 'photos_required') and not self.free:
                     # VALIDATION ##############################################
                     option_list = args.split(',')

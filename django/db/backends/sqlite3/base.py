@@ -1,8 +1,12 @@
 """
-SQLite3 backend for django.  Requires pysqlite2 (http://pysqlite.org/).
+SQLite3 backend for django.
+
+Python 2.3 and 2.4 require pysqlite2 (http://pysqlite.org/).
+
+Python 2.5 and later use the sqlite3 module in the standard library.
 """
 
-from django.db.backends import util
+from django.db.backends import BaseDatabaseWrapper, BaseDatabaseFeatures, BaseDatabaseOperations, util
 try:
     try:
         from sqlite3 import dbapi2 as Database
@@ -17,7 +21,13 @@ except ImportError, e:
         module = 'sqlite3'
     raise ImproperlyConfigured, "Error loading %s module: %s" % (module, e)
 
+try:
+    import decimal
+except ImportError:
+    from django.utils import _decimal as decimal # for Python 2.3
+
 DatabaseError = Database.DatabaseError
+IntegrityError = Database.IntegrityError
 
 Database.register_converter("bool", lambda s: str(s) == '1')
 Database.register_converter("time", util.typecast_time)
@@ -25,30 +35,80 @@ Database.register_converter("date", util.typecast_date)
 Database.register_converter("datetime", util.typecast_timestamp)
 Database.register_converter("timestamp", util.typecast_timestamp)
 Database.register_converter("TIMESTAMP", util.typecast_timestamp)
+Database.register_converter("decimal", util.typecast_decimal)
+Database.register_adapter(decimal.Decimal, util.rev_typecast_decimal)
 
-def utf8rowFactory(cursor, row):
-    def utf8(s):
-        if type(s) == unicode:
-            return s.encode("utf-8")
-        else:
-            return s
-    return [utf8(r) for r in row]
+class DatabaseFeatures(BaseDatabaseFeatures):
+    supports_constraints = False
+    # SQLite cannot handle us only partially reading from a cursor's result set
+    # and then writing the same rows to the database in another cursor. This
+    # setting ensures we always read result sets fully into memory all in one
+    # go.
+    can_use_chunked_reads = False
 
-try:
-    # Only exists in Python 2.4+
-    from threading import local
-except ImportError:
-    # Import copy of _thread_local.py from Python 2.4
-    from django.utils._threading_local import local
+class DatabaseOperations(BaseDatabaseOperations):
+    def date_extract_sql(self, lookup_type, field_name):
+        # sqlite doesn't support extract, so we fake it with the user-defined
+        # function django_extract that's registered in connect().
+        return 'django_extract("%s", %s)' % (lookup_type.lower(), field_name)
 
-class DatabaseWrapper(local):
-    def __init__(self, **kwargs):
-        self.connection = None
-        self.queries = []
-        self.options = kwargs
+    def date_trunc_sql(self, lookup_type, field_name):
+        # sqlite doesn't support DATE_TRUNC, so we fake it with a user-defined
+        # function django_date_trunc that's registered in connect().
+        return 'django_date_trunc("%s", %s)' % (lookup_type.lower(), field_name)
 
-    def cursor(self):
-        from django.conf import settings
+    def drop_foreignkey_sql(self):
+        return ""
+
+    def pk_default_value(self):
+        return 'NULL'
+
+    def quote_name(self, name):
+        if name.startswith('"') and name.endswith('"'):
+            return name # Quoting once is enough.
+        return '"%s"' % name
+
+    def no_limit_value(self):
+        return -1
+
+    def sql_flush(self, style, tables, sequences):
+        # NB: The generated SQL below is specific to SQLite
+        # Note: The DELETE FROM... SQL generated below works for SQLite databases
+        # because constraints don't exist
+        sql = ['%s %s %s;' % \
+                (style.SQL_KEYWORD('DELETE'),
+                 style.SQL_KEYWORD('FROM'),
+                 style.SQL_FIELD(self.quote_name(table))
+                 ) for table in tables]
+        # Note: No requirement for reset of auto-incremented indices (cf. other
+        # sql_flush() implementations). Just return SQL at this point
+        return sql
+
+class DatabaseWrapper(BaseDatabaseWrapper):
+    features = DatabaseFeatures()
+    ops = DatabaseOperations()
+
+    # SQLite requires LIKE statements to include an ESCAPE clause if the value
+    # being escaped has a percent or underscore in it.
+    # See http://www.sqlite.org/lang_expr.html for an explanation.
+    operators = {
+        'exact': '= %s',
+        'iexact': "LIKE %s ESCAPE '\\'",
+        'contains': "LIKE %s ESCAPE '\\'",
+        'icontains': "LIKE %s ESCAPE '\\'",
+        'regex': 'REGEXP %s',
+        'iregex': "REGEXP '(?i)' || %s",
+        'gt': '> %s',
+        'gte': '>= %s',
+        'lt': '< %s',
+        'lte': '<= %s',
+        'startswith': "LIKE %s ESCAPE '\\'",
+        'endswith': "LIKE %s ESCAPE '\\'",
+        'istartswith': "LIKE %s ESCAPE '\\'",
+        'iendswith': "LIKE %s ESCAPE '\\'",
+    }
+
+    def _cursor(self, settings):
         if self.connection is None:
             kwargs = {
                 'database': settings.DATABASE_NAME,
@@ -56,30 +116,19 @@ class DatabaseWrapper(local):
             }
             kwargs.update(self.options)
             self.connection = Database.connect(**kwargs)
-            # Register extract and date_trunc functions.
+            # Register extract, date_trunc, and regexp functions.
             self.connection.create_function("django_extract", 2, _sqlite_extract)
             self.connection.create_function("django_date_trunc", 2, _sqlite_date_trunc)
-        cursor = self.connection.cursor(factory=SQLiteCursorWrapper)
-        cursor.row_factory = utf8rowFactory
-        if settings.DEBUG:
-            return util.CursorDebugWrapper(cursor, self)
-        else:
-            return cursor
-
-    def _commit(self):
-        self.connection.commit()
-
-    def _rollback(self):
-        if self.connection:
-            self.connection.rollback()
+            self.connection.create_function("regexp", 2, _sqlite_regexp)
+        return self.connection.cursor(factory=SQLiteCursorWrapper)
 
     def close(self):
         from django.conf import settings
-        # If database is in memory, closing the connection destroys the database.
-        # To prevent accidental data loss, ignore close requests on an in-memory db.
-        if self.connection is not None and settings.DATABASE_NAME != ":memory:":
-            self.connection.close()
-            self.connection = None
+        # If database is in memory, closing the connection destroys the
+        # database. To prevent accidental data loss, ignore close requests on
+        # an in-memory db.
+        if settings.DATABASE_NAME != ":memory:":
+            BaseDatabaseWrapper.close(self)
 
 class SQLiteCursorWrapper(Database.Cursor):
     """
@@ -92,31 +141,15 @@ class SQLiteCursorWrapper(Database.Cursor):
         return Database.Cursor.execute(self, query, params)
 
     def executemany(self, query, param_list):
-        query = self.convert_query(query, len(param_list[0]))
-        return Database.Cursor.executemany(self, query, param_list)
+        try:
+          query = self.convert_query(query, len(param_list[0]))
+          return Database.Cursor.executemany(self, query, param_list)
+        except (IndexError,TypeError):
+          # No parameter list provided
+          return None
 
     def convert_query(self, query, num_params):
         return query % tuple("?" * num_params)
-
-supports_constraints = False
-
-def quote_name(name):
-    if name.startswith('"') and name.endswith('"'):
-        return name # Quoting once is enough.
-    return '"%s"' % name
-
-dictfetchone = util.dictfetchone
-dictfetchmany = util.dictfetchmany
-dictfetchall  = util.dictfetchall
-
-def get_last_insert_id(cursor, table_name, pk_name):
-    return cursor.lastrowid
-
-def get_date_extract_sql(lookup_type, table_name):
-    # lookup_type is 'year', 'month', 'day'
-    # sqlite doesn't support extract, so we fake it with the user-defined
-    # function _sqlite_extract that's registered in connect(), above.
-    return 'django_extract("%s", %s)' % (lookup_type.lower(), table_name)
 
 def _sqlite_extract(lookup_type, dt):
     try:
@@ -124,29 +157,6 @@ def _sqlite_extract(lookup_type, dt):
     except (ValueError, TypeError):
         return None
     return str(getattr(dt, lookup_type))
-
-def get_date_trunc_sql(lookup_type, field_name):
-    # lookup_type is 'year', 'month', 'day'
-    # sqlite doesn't support DATE_TRUNC, so we fake it as above.
-    return 'django_date_trunc("%s", %s)' % (lookup_type.lower(), field_name)
-
-def get_limit_offset_sql(limit, offset=None):
-    sql = "LIMIT %s" % limit
-    if offset and offset != 0:
-        sql += " OFFSET %s" % offset
-    return sql
-
-def get_random_function_sql():
-    return "RANDOM()"
-
-def get_fulltext_search_sql(field_name):
-    raise NotImplementedError
-
-def get_drop_foreignkey_sql():
-    return ""
-
-def get_pk_default_value():
-    return "NULL"
 
 def _sqlite_date_trunc(lookup_type, dt):
     try:
@@ -160,20 +170,9 @@ def _sqlite_date_trunc(lookup_type, dt):
     elif lookup_type == 'day':
         return "%i-%02i-%02i 00:00:00" % (dt.year, dt.month, dt.day)
 
-# SQLite requires LIKE statements to include an ESCAPE clause if the value
-# being escaped has a percent or underscore in it.
-# See http://www.sqlite.org/lang_expr.html for an explanation.
-OPERATOR_MAPPING = {
-    'exact': '= %s',
-    'iexact': "LIKE %s ESCAPE '\\'",
-    'contains': "LIKE %s ESCAPE '\\'",
-    'icontains': "LIKE %s ESCAPE '\\'",
-    'gt': '> %s',
-    'gte': '>= %s',
-    'lt': '< %s',
-    'lte': '<= %s',
-    'startswith': "LIKE %s ESCAPE '\\'",
-    'endswith': "LIKE %s ESCAPE '\\'",
-    'istartswith': "LIKE %s ESCAPE '\\'",
-    'iendswith': "LIKE %s ESCAPE '\\'",
-}
+def _sqlite_regexp(re_pattern, re_string):
+    import re
+    try:
+        return bool(re.search(re_pattern, re_string))
+    except:
+        return False

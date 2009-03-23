@@ -1,7 +1,8 @@
-from django.template import TemplateSyntaxError, TemplateDoesNotExist, resolve_variable
-from django.template import Library, Node
+from django.template import TemplateSyntaxError, TemplateDoesNotExist, Variable
+from django.template import Library, Node, TextNode
 from django.template.loader import get_template, get_template_from_string, find_template_source
 from django.conf import settings
+from django.utils.safestring import mark_safe
 
 register = Library()
 
@@ -26,7 +27,7 @@ class BlockNode(Node):
 
     def super(self):
         if self.parent:
-            return self.parent.render(self.context)
+            return mark_safe(self.parent.render(self.context))
         return ''
 
     def add_parent(self, nodelist):
@@ -36,10 +37,17 @@ class BlockNode(Node):
             self.parent = BlockNode(self.name, nodelist)
 
 class ExtendsNode(Node):
+    must_be_first = True
+
     def __init__(self, nodelist, parent_name, parent_name_expr, template_dirs=None):
         self.nodelist = nodelist
         self.parent_name, self.parent_name_expr = parent_name, parent_name_expr
         self.template_dirs = template_dirs
+
+    def __repr__(self):
+        if self.parent_name_expr:
+            return "<ExtendsNode: extends %s>" % self.parent_name_expr.token
+        return '<ExtendsNode: extends "%s">' % self.parent_name
 
     def get_parent(self, context):
         if self.parent_name_expr:
@@ -48,7 +56,7 @@ class ExtendsNode(Node):
         if not parent:
             error_msg = "Invalid template name in 'extends' tag: %r." % parent
             if self.parent_name_expr:
-                error_msg += " Got this from the %r variable." % self.parent_name_expr #TODO nice repr.
+                error_msg += " Got this from the '%s' variable." % self.parent_name_expr.token
             raise TemplateSyntaxError, error_msg
         if hasattr(parent, 'render'):
             return parent # parent is a Template object
@@ -61,7 +69,6 @@ class ExtendsNode(Node):
 
     def render(self, context):
         compiled_parent = self.get_parent(context)
-        parent_is_child = isinstance(compiled_parent.nodelist[0], ExtendsNode)
         parent_blocks = dict([(n.name, n) for n in compiled_parent.nodelist.get_nodes_by_type(BlockNode)])
         for block_node in self.nodelist.get_nodes_by_type(BlockNode):
             # Check for a BlockNode with this node's name, and replace it if found.
@@ -72,8 +79,16 @@ class ExtendsNode(Node):
                 # parent block might be defined in the parent's *parent*, so we
                 # add this BlockNode to the parent's ExtendsNode nodelist, so
                 # it'll be checked when the parent node's render() is called.
-                if parent_is_child:
-                    compiled_parent.nodelist[0].nodelist.append(block_node)
+
+                # Find out if the parent template has a parent itself
+                for node in compiled_parent.nodelist:
+                    if not isinstance(node, TextNode):
+                        # If the first non-text node is an extends, handle it.
+                        if isinstance(node, ExtendsNode):
+                            node.nodelist.append(block_node)
+                        # Extends must be the first non-text node, so once you find
+                        # the first non-text node you can stop looking. 
+                        break
             else:
                 # Keep any existing parents and add a new one. Used by BlockNode.
                 parent_block.parent = block_node.parent
@@ -99,11 +114,11 @@ class ConstantIncludeNode(Node):
 
 class IncludeNode(Node):
     def __init__(self, template_name):
-        self.template_name = template_name
+        self.template_name = Variable(template_name)
 
     def render(self, context):
         try:
-            template_name = resolve_variable(self.template_name, context)
+            template_name = self.template_name.resolve(context)
             t = get_template(template_name)
             return t.render(context)
         except TemplateSyntaxError, e:
@@ -129,7 +144,7 @@ def do_block(parser, token):
         parser.__loaded_blocks.append(block_name)
     except AttributeError: # parser.__loaded_blocks isn't a list yet
         parser.__loaded_blocks = [block_name]
-    nodelist = parser.parse(('endblock',))
+    nodelist = parser.parse(('endblock', 'endblock %s' % block_name))
     parser.delete_first_token()
     return BlockNode(block_name, nodelist)
 
@@ -140,7 +155,7 @@ def do_extends(parser, token):
     This tag may be used in two ways: ``{% extends "base" %}`` (with quotes)
     uses the literal value "base" as the name of the parent template to extend,
     or ``{% extends variable %}`` uses the value of ``variable`` as either the
-    name of the parent template to extend (if it evaluates to a string,) or as
+    name of the parent template to extend (if it evaluates to a string) or as
     the parent tempate itelf (if it evaluates to a Template object).
     """
     bits = token.contents.split()

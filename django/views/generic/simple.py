@@ -1,19 +1,22 @@
 from django.shortcuts import render_to_response
-from django.template import RequestContext
+from django.template import loader, RequestContext
 from django.http import HttpResponse, HttpResponsePermanentRedirect, HttpResponseGone
 
-def direct_to_template(request, template, extra_context={}, **kwargs):
+def direct_to_template(request, template, extra_context=None, mimetype=None, **kwargs):
     """
     Render a given template with any extra URL parameters in the context as
     ``{{ params }}``.
     """
+    if extra_context is None: extra_context = {}
     dictionary = {'params': kwargs}
     for key, value in extra_context.items():
         if callable(value):
             dictionary[key] = value()
         else:
             dictionary[key] = value
-    return render_to_response(template, dictionary, context_instance=RequestContext(request))
+    c = RequestContext(request, dictionary)
+    t = loader.get_template(template)
+    return HttpResponse(t.render(c), mimetype=mimetype)
 
 def redirect_to(request, url, **kwargs):
     """

@@ -2,7 +2,6 @@
 {% load i18n %}
 {% block coltype %}colSM{% endblock %}
 {% block breadcrumbs %}<div class="breadcrumbs"><a href="../../">Home</a> &rsaquo; <a href="../">Documentation</a> &rsaquo; Tags</div>{% endblock %}
-{% block userlinks %}<a href="../../password_change/">{% trans 'Change password' %}</a> / <a href="../../logout/">{% trans 'Log out' %}</a>{% endblock %}
 {% block title %}Template tags{% endblock %}
 
 {% block content %}
@@ -14,7 +13,7 @@
 {% for library in tag_libraries %}
 <div class="module">
     <h2>{% if library.grouper %}{{ library.grouper }}{% else %}Built-in tags{% endif %}</h2>
-    {% if library.grouper %}<p class="small quiet">To use these tags, put <code>{% templatetag openblock %} load {{ library.grouper }} {% templatetag closeblock %}</code> in your template before using the tag.</p><hr>{% endif %}
+    {% if library.grouper %}<p class="small quiet">To use these tags, put <code>{% templatetag openblock %} load {{ library.grouper }} {% templatetag closeblock %}</code> in your template before using the tag.</p><hr />{% endif %}
     {% for tag in library.list|dictsort:"name" %}
     <h3 id="{{ tag.name }}">{{ tag.name }}</h3>
     <h4>{{ tag.title }}</h4>

@@ -1,14 +1,16 @@
-from django.core.handlers.base import BaseHandler
-from django.core import signals
-from django.dispatch import dispatcher
-from django.utils import datastructures
-from django import http
+from threading import Lock
 from pprint import pformat
-from shutil import copyfileobj
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
+
+from django import http
+from django.core import signals
+from django.core.handlers.base import BaseHandler
+from django.dispatch import dispatcher
+from django.utils import datastructures
+from django.utils.encoding import force_unicode
 
 # See http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
 STATUS_CODE_TEXT = {
@@ -73,7 +75,7 @@ def safe_copyfileobj(fsrc, fdst, length=16*1024, size=0):
 class WSGIRequest(http.HttpRequest):
     def __init__(self, environ):
         self.environ = environ
-        self.path = environ['PATH_INFO']
+        self.path = force_unicode(environ['PATH_INFO'])
         self.META = environ
         self.method = environ['REQUEST_METHOD'].upper()
 
@@ -103,19 +105,19 @@ class WSGIRequest(http.HttpRequest):
         return '%s%s' % (self.path, self.environ.get('QUERY_STRING', '') and ('?' + self.environ.get('QUERY_STRING', '')) or '')
 
     def is_secure(self):
-        return self.environ.has_key('HTTPS') and self.environ['HTTPS'] == 'on'
+        return 'wsgi.url_scheme' in self.environ \
+            and self.environ['wsgi.url_scheme'] == 'https'
 
     def _load_post_and_files(self):
         # Populates self._post and self._files
         if self.method == 'POST':
             if self.environ.get('CONTENT_TYPE', '').startswith('multipart'):
-                header_dict = dict([(k, v) for k, v in self.environ.items() if k.startswith('HTTP_')])
-                header_dict['Content-Type'] = self.environ.get('CONTENT_TYPE', '')
-                self._post, self._files = http.parse_file_upload(header_dict, self.raw_post_data)
+                self._raw_post_data = ''
+                self._post, self._files = self.parse_file_upload(self.META, self.environ['wsgi.input'])
             else:
-                self._post, self._files = http.QueryDict(self.raw_post_data), datastructures.MultiValueDict()
+                self._post, self._files = http.QueryDict(self.raw_post_data, encoding=self._encoding), datastructures.MultiValueDict()
         else:
-            self._post, self._files = http.QueryDict(''), datastructures.MultiValueDict()
+            self._post, self._files = http.QueryDict('', encoding=self._encoding), datastructures.MultiValueDict()
 
     def _get_request(self):
         if not hasattr(self, '_request'):
@@ -125,7 +127,7 @@ class WSGIRequest(http.HttpRequest):
     def _get_get(self):
         if not hasattr(self, '_get'):
             # The WSGI spec says 'QUERY_STRING' may be absent.
-            self._get = http.QueryDict(self.environ.get('QUERY_STRING', ''))
+            self._get = http.QueryDict(self.environ.get('QUERY_STRING', ''), encoding=self._encoding)
         return self._get
 
     def _set_get(self, get):
@@ -162,7 +164,9 @@ class WSGIRequest(http.HttpRequest):
                 content_length = int(self.environ.get('CONTENT_LENGTH', 0))
             except ValueError: # if CONTENT_LENGTH was empty string or not an integer
                 content_length = 0
-            safe_copyfileobj(self.environ['wsgi.input'], buf, size=content_length)
+            if content_length > 0:
+                safe_copyfileobj(self.environ['wsgi.input'], buf,
+                        size=content_length)
             self._raw_post_data = buf.getvalue()
             buf.close()
             return self._raw_post_data
@@ -175,23 +179,34 @@ class WSGIRequest(http.HttpRequest):
     raw_post_data = property(_get_raw_post_data)
 
 class WSGIHandler(BaseHandler):
+    initLock = Lock()
+    request_class = WSGIRequest
+
     def __call__(self, environ, start_response):
         from django.conf import settings
 
         # Set up middleware if needed. We couldn't do this earlier, because
         # settings weren't available.
         if self._request_middleware is None:
-            self.load_middleware()
+            self.initLock.acquire()
+            # Check that middleware is still uninitialised.
+            if self._request_middleware is None:
+                self.load_middleware()
+            self.initLock.release()
 
         dispatcher.send(signal=signals.request_started)
         try:
-            request = WSGIRequest(environ)
-            response = self.get_response(request)
+            try:
+                request = self.request_class(environ)
+            except UnicodeDecodeError:
+                response = http.HttpResponseBadRequest()
+            else:
+                response = self.get_response(request)
 
-            # Apply response middleware
-            for middleware_method in self._response_middleware:
-                response = middleware_method(request, response)
-
+                # Apply response middleware
+                for middleware_method in self._response_middleware:
+                    response = middleware_method(request, response)
+                response = self.apply_response_fixes(request, response)
         finally:
             dispatcher.send(signal=signals.request_finished)
 
@@ -200,8 +215,9 @@ class WSGIHandler(BaseHandler):
         except KeyError:
             status_text = 'UNKNOWN STATUS CODE'
         status = '%s %s' % (response.status_code, status_text)
-        response_headers = response.headers.items()
+        response_headers = [(str(k), str(v)) for k, v in response.items()]
         for c in response.cookies.values():
-            response_headers.append(('Set-Cookie', c.output(header='')))
+            response_headers.append(('Set-Cookie', str(c.output(header=''))))
         start_response(status, response_headers)
         return response
+

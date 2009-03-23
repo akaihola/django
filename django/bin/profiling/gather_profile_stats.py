@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 gather_profile_stats.py /path/to/dir/of/profiles
 
@@ -22,7 +24,7 @@ def gather_stats(p):
         else:
             continue
         print "Processing %s" % f
-        if profiles.has_key(path):
+        if path in profiles:
             profiles[path].add(prof)
         else:
             profiles[path] = prof

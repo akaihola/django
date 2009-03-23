@@ -7,7 +7,8 @@ from django.db.models import signals
 from django.utils.functional import curry
 from django.utils.datastructures import DotExpandedDict
 from django.utils.text import capfirst
-import types
+from django.utils.encoding import smart_str
+from django.utils.translation import ugettext as _
 
 def add_manipulators(sender):
     cls = sender
@@ -36,7 +37,7 @@ class ManipulatorDescriptor(object):
                 bases = [self.base]
                 if hasattr(model, 'Manipulator'):
                     bases = [model.Manipulator] + bases
-                self.man = types.ClassType(self.name, tuple(bases), {})
+                self.man = type(self.name, tuple(bases), {})
                 self.man._prepare(model)
             return self.man
 
@@ -96,30 +97,29 @@ class AutomaticManipulator(oldforms.Manipulator):
         if self.change:
             params[self.opts.pk.attname] = self.obj_key
 
-        # First, save the basic object itself.
+        # First, create the basic object itself.
         new_object = self.model(**params)
-        new_object.save()
 
-        # Now that the object's been saved, save any uploaded files.
+        # Now that the object's been created, save any uploaded files.
         for f in self.opts.fields:
             if isinstance(f, FileField):
-                f.save_file(new_data, new_object, self.change and self.original_object or None, self.change, rel=False)
+                f.save_file(new_data, new_object, self.change and self.original_object or None, self.change, rel=False, save=False)
+
+        # Now save the object
+        new_object.save()
 
         # Calculate which primary fields have changed.
         if self.change:
             self.fields_added, self.fields_changed, self.fields_deleted = [], [], []
             for f in self.opts.fields:
-                if not f.primary_key and str(getattr(self.original_object, f.attname)) != str(getattr(new_object, f.attname)):
+                if not f.primary_key and smart_str(getattr(self.original_object, f.attname)) != smart_str(getattr(new_object, f.attname)):
                     self.fields_changed.append(f.verbose_name)
 
         # Save many-to-many objects. Example: Set sites for a poll.
         for f in self.opts.many_to_many:
             if self.follow.get(f.name, None):
                 if not f.rel.edit_inline:
-                    if f.rel.raw_id_admin:
-                        new_vals = new_data.get(f.name, ())
-                    else:
-                        new_vals = new_data.getlist(f.name)
+                    new_vals = new_data.getlist(f.name)
                     # First, clear the existing values.
                     rel_manager = getattr(new_object, f.name)
                     rel_manager.clear()
@@ -209,15 +209,13 @@ class AutomaticManipulator(oldforms.Manipulator):
                                 self.fields_added.append('%s "%s"' % (related.opts.verbose_name, new_rel_obj))
                             else:
                                 for f in related.opts.fields:
-                                    if not f.primary_key and f != related.field and str(getattr(old_rel_obj, f.attname)) != str(getattr(new_rel_obj, f.attname)):
+                                    if not f.primary_key and f != related.field and smart_str(getattr(old_rel_obj, f.attname)) != smart_str(getattr(new_rel_obj, f.attname)):
                                         self.fields_changed.append('%s for %s "%s"' % (f.verbose_name, related.opts.verbose_name, new_rel_obj))
 
                         # Save many-to-many objects.
                         for f in related.opts.many_to_many:
                             if child_follow.get(f.name, None) and not f.rel.edit_inline:
                                 new_value = rel_new_data[f.attname]
-                                if f.rel.raw_id_admin:
-                                    new_value = new_value[0]
                                 setattr(new_rel_obj, f.name, f.rel.to.objects.filter(pk__in=new_value))
                                 if self.change:
                                     self.fields_changed.append('%s for %s "%s"' % (f.verbose_name, related.opts.verbose_name, new_rel_obj))
