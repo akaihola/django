@@ -64,6 +64,38 @@ def validate(cls, model):
         raise ImproperlyConfigured("'%s.list_per_page' should be a integer."
                 % cls.__name__)
 
+    # list_editable
+    if hasattr(cls, 'list_editable') and cls.list_editable:
+        check_isseq(cls, 'list_editable', cls.list_editable)
+        if not (opts.ordering or cls.ordering):
+            raise ImproperlyConfigured("'%s.list_editable' cannot be used "
+                "without a default ordering. Please define ordering on either %s or %s."
+                % (cls.__name__, cls.__name__, model.__name__))
+        for idx, field_name in enumerate(cls.list_editable):
+            try:
+                field = opts.get_field_by_name(field_name)[0]
+            except models.FieldDoesNotExist:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to a "
+                    "field, '%s', not defiend on %s."
+                    % (cls.__name__, idx, field_name, model.__name__))
+            if field_name not in cls.list_display:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to "
+                    "'%s' which is not defined in 'list_display'."
+                    % (cls.__name__, idx, field_name))
+            if field_name in cls.list_display_links:
+                raise ImproperlyConfigured("'%s' cannot be in both '%s.list_editable'"
+                    " and '%s.list_display_links'"
+                    % (field_name, cls.__name__, cls.__name__))
+            if not cls.list_display_links and cls.list_display[0] in cls.list_editable:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to"
+                    " the first field in list_display, '%s', which can't be"
+                    " used unless list_display_links is set."
+                    % (cls.__name__, idx, cls.list_display[0]))
+            if not field.editable:
+                raise ImproperlyConfigured("'%s.list_editable[%d]' refers to a "
+                    "field, '%s', which isn't editable through the admin."
+                    % (cls.__name__, idx, field_name))
+
     # search_fields = ()
     if hasattr(cls, 'search_fields'):
         check_isseq(cls, 'search_fields', cls.search_fields)
@@ -95,6 +127,14 @@ def validate(cls, model):
                 continue
             get_field(cls, model, opts, 'ordering[%d]' % idx, field)
 
+    if cls.actions:
+        check_isseq(cls, 'actions', cls.actions)
+        for idx, item in enumerate(cls.actions):
+            if (not callable(item)) and (not hasattr(cls, item)):
+                raise ImproperlyConfigured("'%s.actions[%d]' is neither a "
+                    "callable nor a method on %s" % (cls.__name__, idx, cls.__name__))
+
+
     # list_select_related = False
     # save_as = False
     # save_on_top = False
@@ -102,6 +142,7 @@ def validate(cls, model):
         if not isinstance(getattr(cls, attr), bool):
             raise ImproperlyConfigured("'%s.%s' should be a boolean."
                     % (cls.__name__, attr))
+
 
     # inlines = []
     if hasattr(cls, 'inlines'):

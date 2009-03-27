@@ -14,6 +14,7 @@ from django.core.exceptions import ImproperlyConfigured, ViewDoesNotExist
 from django.utils.datastructures import MultiValueDict
 from django.utils.encoding import iri_to_uri, force_unicode, smart_str
 from django.utils.functional import memoize
+from django.utils.importlib import import_module
 from django.utils.regex_helper import normalize
 from django.utils.thread_support import currentThread
 
@@ -54,7 +55,7 @@ def get_callable(lookup_view, can_fail=False):
             lookup_view = lookup_view.encode('ascii')
             mod_name, func_name = get_mod_func(lookup_view)
             if func_name != '':
-                lookup_view = getattr(__import__(mod_name, {}, {}, ['']), func_name)
+                lookup_view = getattr(import_module(mod_name), func_name)
                 if not callable(lookup_view):
                     raise AttributeError("'%s.%s' is not a callable." % (mod_name, func_name))
         except (ImportError, AttributeError):
@@ -154,6 +155,7 @@ class RegexURLResolver(object):
 
     def _get_reverse_dict(self):
         if not self._reverse_dict:
+            lookups = MultiValueDict()
             for pattern in reversed(self.url_patterns):
                 p_pattern = pattern.regex.pattern
                 if p_pattern.startswith('^'):
@@ -165,11 +167,12 @@ class RegexURLResolver(object):
                             new_matches = []
                             for piece, p_args in parent:
                                 new_matches.extend([(piece + suffix, p_args + args) for (suffix, args) in matches])
-                            self._reverse_dict.appendlist(name, (new_matches, p_pattern + pat))
+                            lookups.appendlist(name, (new_matches, p_pattern + pat))
                 else:
                     bits = normalize(p_pattern)
-                    self._reverse_dict.appendlist(pattern.callback, (bits, p_pattern))
-                    self._reverse_dict.appendlist(pattern.name, (bits, p_pattern))
+                    lookups.appendlist(pattern.callback, (bits, p_pattern))
+                    lookups.appendlist(pattern.name, (bits, p_pattern))
+            self._reverse_dict = lookups
         return self._reverse_dict
     reverse_dict = property(_get_reverse_dict)
 
@@ -197,7 +200,7 @@ class RegexURLResolver(object):
         try:
             return self._urlconf_module
         except AttributeError:
-            self._urlconf_module = __import__(self.urlconf_name, {}, {}, [''])
+            self._urlconf_module = import_module(self.urlconf_name)
             return self._urlconf_module
     urlconf_module = property(_get_urlconf_module)
 
@@ -215,7 +218,7 @@ class RegexURLResolver(object):
         callback = getattr(self.urlconf_module, 'handler%s' % view_type)
         mod_name, func_name = get_mod_func(callback)
         try:
-            return getattr(__import__(mod_name, {}, {}, ['']), func_name), {}
+            return getattr(import_module(mod_name), func_name), {}
         except (ImportError, AttributeError), e:
             raise ViewDoesNotExist, "Tried %s. Error was: %s" % (callback, str(e))
 

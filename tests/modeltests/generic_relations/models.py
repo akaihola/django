@@ -241,7 +241,6 @@ __test__ = {'API_TESTS':"""
 >>> formset = GenericFormSet(instance=lion, prefix='x')
 >>> for form in formset.forms:
 ...     print form.as_p()
-    <p><label for="id_x-0-tag">Tag:</label> <input id="id_x-0-tag" type="text" name="x-0-tag" maxlength="50" /></p>
-    <p><label for="id_x-0-DELETE">Delete:</label> <input type="checkbox" name="x-0-DELETE" id="id_x-0-DELETE" /><input type="hidden" name="x-0-id" id="id_x-0-id" /></p>
-
+<p><label for="id_x-0-tag">Tag:</label> <input id="id_x-0-tag" type="text" name="x-0-tag" maxlength="50" /></p>
+<p><label for="id_x-0-DELETE">Delete:</label> <input type="checkbox" name="x-0-DELETE" id="id_x-0-DELETE" /><input type="hidden" name="x-0-id" id="id_x-0-id" /></p>
 """}

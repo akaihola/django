@@ -3,7 +3,8 @@ SQLite3 backend for django.
 
 Python 2.3 and 2.4 require pysqlite2 (http://pysqlite.org/).
 
-Python 2.5 and later use the sqlite3 module in the standard library.
+Python 2.5 and later can use a pysqlite2 module or the sqlite3 module in the
+standard library.
 """
 
 from django.db.backends import *
@@ -14,18 +15,18 @@ from django.utils.safestring import SafeString
 
 try:
     try:
-        from sqlite3 import dbapi2 as Database
-    except ImportError, e1:
         from pysqlite2 import dbapi2 as Database
+    except ImportError, e1:
+        from sqlite3 import dbapi2 as Database
 except ImportError, exc:
     import sys
     from django.core.exceptions import ImproperlyConfigured
     if sys.version_info < (2, 5, 0):
-        module = 'pysqlite2'
-    else:
-        module = 'sqlite3'
+        module = 'pysqlite2 module'
         exc = e1
-    raise ImproperlyConfigured, "Error loading %s module: %s" % (module, exc)
+    else:
+        module = 'either pysqlite2 or sqlite3 modules (tried in that order)'
+    raise ImproperlyConfigured, "Error loading %s: %s" % (module, exc)
 
 try:
     import decimal
@@ -149,21 +150,22 @@ class DatabaseWrapper(BaseDatabaseWrapper):
 
         self.features = DatabaseFeatures()
         self.ops = DatabaseOperations()
-        self.client = DatabaseClient()
+        self.client = DatabaseClient(self)
         self.creation = DatabaseCreation(self)
         self.introspection = DatabaseIntrospection(self)
         self.validation = BaseDatabaseValidation()
 
-    def _cursor(self, settings):
+    def _cursor(self):
         if self.connection is None:
-            if not settings.DATABASE_NAME:
+            settings_dict = self.settings_dict
+            if not settings_dict['DATABASE_NAME']:
                 from django.core.exceptions import ImproperlyConfigured
                 raise ImproperlyConfigured, "Please fill out DATABASE_NAME in the settings module before using the database."
             kwargs = {
-                'database': settings.DATABASE_NAME,
+                'database': settings_dict['DATABASE_NAME'],
                 'detect_types': Database.PARSE_DECLTYPES | Database.PARSE_COLNAMES,
             }
-            kwargs.update(self.options)
+            kwargs.update(settings_dict['DATABASE_OPTIONS'])
             self.connection = Database.connect(**kwargs)
             # Register extract, date_trunc, and regexp functions.
             self.connection.create_function("django_extract", 2, _sqlite_extract)
@@ -172,11 +174,10 @@ class DatabaseWrapper(BaseDatabaseWrapper):
         return self.connection.cursor(factory=SQLiteCursorWrapper)
 
     def close(self):
-        from django.conf import settings
         # If database is in memory, closing the connection destroys the
         # database. To prevent accidental data loss, ignore close requests on
         # an in-memory db.
-        if settings.DATABASE_NAME != ":memory:":
+        if self.settings_dict['DATABASE_NAME'] != ":memory:":
             BaseDatabaseWrapper.close(self)
 
 class SQLiteCursorWrapper(Database.Cursor):

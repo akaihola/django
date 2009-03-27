@@ -16,10 +16,17 @@ try:
 except NameError:
     from django.utils.itercompat import sorted
 
+class DumbCategory(models.Model):
+    pass
+
+class NamedCategory(DumbCategory):
+    name = models.CharField(max_length=10)
+
 class Tag(models.Model):
     name = models.CharField(max_length=10)
     parent = models.ForeignKey('self', blank=True, null=True,
             related_name='children')
+    category = models.ForeignKey(NamedCategory, null=True, default=None)
 
     class Meta:
         ordering = ['name']
@@ -266,8 +273,9 @@ class Plaything(models.Model):
 
 
 __test__ = {'API_TESTS':"""
->>> t1 = Tag.objects.create(name='t1')
->>> t2 = Tag.objects.create(name='t2', parent=t1)
+>>> generic = NamedCategory.objects.create(name="Generic")
+>>> t1 = Tag.objects.create(name='t1', category=generic)
+>>> t2 = Tag.objects.create(name='t2', parent=t1, category=generic)
 >>> t3 = Tag.objects.create(name='t3', parent=t1)
 >>> t4 = Tag.objects.create(name='t4', parent=t3)
 >>> t5 = Tag.objects.create(name='t5', parent=t3)
@@ -726,6 +734,12 @@ Bug #6981
 >>> Tag.objects.select_related('parent').order_by('name')
 [<Tag: t1>, <Tag: t2>, <Tag: t3>, <Tag: t4>, <Tag: t5>]
 
+Bug #9926
+>>> Tag.objects.select_related("parent", "category").order_by('name')
+[<Tag: t1>, <Tag: t2>, <Tag: t3>, <Tag: t4>, <Tag: t5>]
+>>> Tag.objects.select_related('parent', "parent__category").order_by('name')
+[<Tag: t1>, <Tag: t2>, <Tag: t3>, <Tag: t4>, <Tag: t5>]
+
 Bug #6180, #6203 -- dates with limits and/or counts
 >>> Item.objects.count()
 4
@@ -831,7 +845,7 @@ in MySQL. This exercises that case.
 A values() or values_list() query across joined models must use outer joins
 appropriately.
 >>> Report.objects.values_list("creator__extra__info", flat=True).order_by("name")
-[u'e1', u'e2', None]
+[u'e1', u'e2', <NONE_OR_EMPTY_UNICODE>]
 
 Similarly for select_related(), joins beyond an initial nullable join must
 use outer joins so that all results are included.
@@ -888,6 +902,15 @@ unpickling.
 >>> query = qs.query.as_sql()[0]
 >>> query2 = pickle.loads(pickle.dumps(qs.query))
 >>> query2.as_sql()[0] == query
+True
+
+Check pickling of deferred-loading querysets
+>>> qs = Item.objects.defer('name', 'creator')
+>>> q2 = pickle.loads(pickle.dumps(qs))
+>>> list(qs) == list(q2)
+True
+>>> q3 = pickle.loads(pickle.dumps(qs, pickle.HIGHEST_PROTOCOL))
+>>> list(qs) == list(q3)
 True
 
 Bug #7277
@@ -1136,6 +1159,14 @@ FieldError: Infinite loop caused by ordering.
 []
 
 """
+
+
+# In Oracle, we expect a null CharField to return u'' instead of None.
+if settings.DATABASE_ENGINE == "oracle":
+    __test__["API_TESTS"] = __test__["API_TESTS"].replace("<NONE_OR_EMPTY_UNICODE>", "u''")
+else:
+    __test__["API_TESTS"] = __test__["API_TESTS"].replace("<NONE_OR_EMPTY_UNICODE>", "None")
+
 
 if settings.DATABASE_ENGINE == "mysql":
     __test__["API_TESTS"] += """

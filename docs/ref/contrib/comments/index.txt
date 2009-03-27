@@ -215,3 +215,5 @@ More information
    signals
    upgrade
    custom
+   forms
+   moderation
