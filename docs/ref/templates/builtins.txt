@@ -101,6 +101,9 @@ You can use any number of values in a ``{% cycle %}`` tag, separated by spaces.
 Values enclosed in single (``'``) or double quotes (``"``) are treated as
 string literals, while values without quotes are treated as template variables.
 
+You can use the `resetcycle`_ tag to reset a ``{% cycle %}`` tag to restart from
+its first value when it's next encountered.
+
 For backwards compatibility, the ``{% cycle %}`` tag supports the much inferior
 old syntax from previous Django versions. You shouldn't use this in any new
 projects, but for the sake of the people who are still using it, here's what it
@@ -621,6 +624,44 @@ Another solution is to sort the data in the template using the ``dictsort``
 filter, if your data is in a list of dictionaries::
 
     {% regroup people|dictsort:"gender" by gender as gender_list %}
+
+.. templatetag:: resetcycle
+
+resetcycle
+~~~~~~~~~~
+
+Resets a previous `cycle`_ so that it restarts from its first item when it's
+next encountered.  Without arguments, ``{% resetcycle %}`` will reset the last
+unnamed ``{% cycle %}`` defined in the template.
+
+Example usage::
+
+    {% for coach in coach_list %}
+        <h1>{{ coach.name }}</h1>
+        {% for athlete in coach.athlete_set.all %}
+            <p class="{% cycle 'odd' 'even' %}">{{ athlete.name }}</p>
+        {% endfor %}
+        {% resetcycle %}
+    {% endfor %}
+
+The athlete list for every coach starts with ``class="odd"``.  Without the
+``{% resetcycle %}`` tag, the first athlete of a coach might be rendered with
+``class="even"`` if the last athlete of the previous coach had ``class="odd"``.
+
+You can also reset named cycle tags::
+
+    {% for item in list %}
+        <p class="{% cycle 'odd' 'evn' as stripe %} {% cycle 'majr' 'minr' 'minr' 'minr' 'minr' as tick %}">
+	    {{ item.data }}
+	</p>
+        {% ifchanged item.category %}
+            <h1>{{ item.category }}</h1>
+            {% if not forloop.first %}{% resetcycle tick %}{% endif %}
+        {% endifchanged %}
+    {% endfor %}
+
+In this example we have both the alternating odd/even rows and a "major" row
+every fifth row.  Only the five-row cycle is reset when a category changes.
 
 .. templatetag:: spaceless
 
