@@ -39,14 +39,26 @@ class CommentNode(Node):
 
 class CycleNode(Node):
     def __init__(self, cyclevars, variable_name=None):
-        self.cycle_iter = itertools_cycle(cyclevars)
+        self.cyclevars = cyclevars
+        self.reset()
         self.variable_name = variable_name
+
+    def reset(self):
+        self.cycle_iter = itertools_cycle(self.cyclevars)
 
     def render(self, context):
         value = self.cycle_iter.next().resolve(context)
         if self.variable_name:
             context[self.variable_name] = value
         return value
+
+class ResetCycleNode(Node):
+    def __init__(self, node):
+        self.node = node
+
+    def render(self, context):
+        self.node.reset()
+        return ''
 
 class DebugNode(Node):
     def render(self, context):
@@ -481,7 +493,7 @@ def cycle(parser, token):
     # Ugly hack warning: This stuffs the named template dict into parser so
     # that names are only unique within each template (as opposed to using
     # a global variable, which would make cycle names have to be unique across
-    # *all* templates.
+    # *all* templates). Also keeps last unnamed node in the parser.
 
     args = token.split_contents()
 
@@ -512,8 +524,36 @@ def cycle(parser, token):
     else:
         values = [parser.compile_filter(arg) for arg in args[1:]]
         node = CycleNode(values)
+        parser._lastUnnamedCycleNode = node
     return node
 cycle = register.tag(cycle)
+
+def resetcycle(parser, token):
+    """
+    Resets a cycle tag.
+
+    If an argument is given, resets the last rendered cycle tag whose name
+    matches the argument, else resets last rendered unnamed cycle tag.
+    """
+    args = token.split_contents()
+
+    if len(args) > 2:
+        raise TemplateSyntaxError("%r tag accepts at most one argument."
+                                  % args[0])
+    if len(args) == 2:
+        name = args[1]
+        try:
+            return ResetCycleNode(parser._namedCycleNodes[name])
+        except AttributeError:
+            raise TemplateSyntaxError("No named cycles in template. "
+                                      "%r is not defined" % name)
+        except KeyError:
+            raise TemplateSyntaxError("Named cycle %r does not exist" % name)
+    try:
+        return ResetCycleNode(parser._lastUnnamedCycleNode)
+    except AttributeError:
+        raise TemplateSyntaxError("No unnamed cycles in template.")
+resetcycle = register.tag(resetcycle)
 
 def debug(parser, token):
     """

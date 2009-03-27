@@ -434,6 +434,15 @@ class Templates(unittest.TestCase):
             'cycle15': ("{% for i in test %}{% cycle aye bee %}{{ i }},{% endfor %}", {'test': range(5), 'aye': 'a', 'bee': 'b'}, 'a0,b1,a2,b3,a4,'),
             'cycle16': ("{% cycle one|lower two as foo %}{% cycle foo %}", {'one': 'A','two': '2'}, 'a2'),
 
+            ### RESETCYCLE TAG ########################################################
+            'resetcycle01': ("{% for i in test %}{% cycle a,b %}{% resetcycle %}{% endfor %}", {'test': range(5)}, 'aaaaa'),
+            'resetcycle02': ("{% cycle a,b,c as abc %}{% for i in test %}{% cycle abc %}{% cycle '-' '+' %}{% resetcycle %}{% endfor %}", {'test': range(5)}, 'ab-c-a-b-c-'),
+            'resetcycle03': ("{% cycle a,b,c as abc %}{% for i in test %}{% resetcycle abc %}{% cycle abc %}{% cycle '-' '+' %}{% endfor %}", {'test': range(5)}, 'aa-a+a-a+a-'),
+            'resetcycle04': ("{% for i in outer %}{% for j in inner %}{% cycle a,b %}{% endfor %}{% resetcycle %}{% endfor %}", {'outer': range(2), 'inner': range(3)}, 'abaaba'),
+            'resetcycle05': ("{% for i in outer %}{% cycle a,b %}{% for j in inner %}{% cycle X,Y %}{% endfor %}{% resetcycle %}{% endfor %}", {'outer': range(2), 'inner': range(3)}, 'aXYXbXYX'),
+            'resetcycle06': ("{% for i in test %}{% cycle X,Y,Z as XYZ %}{% cycle a,b,c as abc %}{% ifequal i 1 %}{% resetcycle abc %}{% endifequal %}{% endfor %}", {'test': range(5)}, 'XaYbZaXbYc'),
+            'resetcycle07': ("{% for i in test %}{% cycle X,Y,Z as XYZ %}{% cycle a,b,c as abc %}{% ifequal i 1 %}{% resetcycle XYZ %}{% endifequal %}{% endfor %}", {'test': range(5)}, 'XaYbXcYaZb'),
+
             ### EXCEPTIONS ############################################################
 
             # Raise exception for invalid template name
