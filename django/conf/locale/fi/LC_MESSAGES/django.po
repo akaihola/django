@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-05-05 16:52+0300\n"
-"PO-Revision-Date: 2009-05-05 17:16+0300\n"
+"POT-Creation-Date: 2009-05-20 15:10+0300\n"
+"PO-Revision-Date: 2007-09-15 00:34+0300\n"
 "Last-Translator: Ville Säävuori <ville@unessa.net>\n"
 "Language-Team: Django I18N <Django-I18N@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
@@ -221,16 +221,16 @@ msgstr "kiina (yksinkertaistettu)"
 msgid "Traditional Chinese"
 msgstr "kiina (perinteinen)"
 
-#: contrib/admin/actions.py:56
+#: contrib/admin/actions.py:60
 #, python-format
 msgid "Successfully deleted %(count)d %(items)s."
-msgstr "%(count)d \"%(items)s\"-kohdetta on poistettu."
+msgstr "Onnistuneesti poistettu %(count)d \"%(items)s\"-kohdetta."
 
-#: contrib/admin/actions.py:63 contrib/admin/options.py:1025
+#: contrib/admin/actions.py:67 contrib/admin/options.py:1025
 msgid "Are you sure?"
 msgstr "Oletko varma?"
 
-#: contrib/admin/actions.py:81
+#: contrib/admin/actions.py:85
 #, python-format
 msgid "Delete selected %(verbose_name_plural)s"
 msgstr "Poista valitut \"%(verbose_name_plural)s\"-kohteet"
@@ -323,7 +323,8 @@ msgid "Changed %s."
 msgstr "Muokattu: %s."
 
 #: contrib/admin/options.py:519 contrib/admin/options.py:529
-#: contrib/comments/templates/comments/preview.html:16 forms/models.py:384
+#: contrib/comments/templates/comments/preview.html:16 forms/models.py:388
+#: forms/models.py:587
 msgid "and"
 msgstr "ja"
 
@@ -380,7 +381,7 @@ msgstr "Lisää %s"
 #: contrib/admin/options.py:803 contrib/admin/options.py:1003
 #, python-format
 msgid "%(name)s object with primary key %(key)r does not exist."
-msgstr "%(name)s perusavaimella %(key)r ei löydy."
+msgstr "%(name)s perusavaimella %(key)r ei ole olemassa."
 
 #: contrib/admin/options.py:860
 #, python-format
@@ -395,8 +396,8 @@ msgstr "Tietokantavirhe"
 #, python-format
 msgid "%(count)s %(name)s was changed successfully."
 msgid_plural "%(count)s %(name)s were changed successfully."
-msgstr[0] "%(count)s %(name)s on muutettu."
-msgstr[1] "%(count)s \"%(name)s\"-kohdetta on muutettu."
+msgstr[0] "%(count)s %(name)s on muokattu."
+msgstr[1] "%(count)s \"%(name)s\"-kohdetta on muokattu."
 
 #: contrib/admin/options.py:1018
 #, python-format
@@ -543,9 +544,8 @@ msgid "Run the selected action"
 msgstr "Suorita valittu toiminto"
 
 #: contrib/admin/templates/admin/actions.html:4
-#: contrib/admin/templates/admin/search_form.html:8
 msgid "Go"
-msgstr "Etsi"
+msgstr "Suorita"
 
 #: contrib/admin/templates/admin/app_index.html:10
 #: contrib/admin/templates/admin/index.html:19
@@ -660,8 +660,8 @@ msgid ""
 "your account doesn't have permission to delete the following types of "
 "objects:"
 msgstr ""
-"Kohteen %(object_name)s poisto poistaisi myös siihen liittyviä kohteita, mutta \n"
-"sinulla ei ole oikeutta seuraavien kohteiden \n"
+"Kohteen (%(object_name)s) poisto poistaisi myös siihen "
+"liittyviä kohteita, mutta sinulla ei ole oikeutta näiden kohteiden "
 "poistamiseen:"
 
 #: contrib/admin/templates/admin/delete_selected_confirmation.html:22
@@ -670,7 +670,7 @@ msgid ""
 "Are you sure you want to delete the selected %(object_name)s objects? All of "
 "the following objects and it's related items will be deleted:"
 msgstr ""
-"Haluatko varmasti poistaa valitut \"%(object_name)s\"-kohteet? \n"
+"Haluatko varmasti poistaa valitut (%(object_name)s) kohteet? "
 "Myös seuraavat kohteet poistettaisiin samalla:"
 
 #: contrib/admin/templates/admin/filter.html:2
@@ -753,6 +753,10 @@ msgstr ""
 #: contrib/admin/templates/admin/pagination.html:10
 msgid "Show all"
 msgstr "Näytä kaikki"
+
+#: contrib/admin/templates/admin/search_form.html:8
+msgid "Search"
+msgstr "Haku"
 
 #: contrib/admin/templates/admin/search_form.html:10
 #, python-format
@@ -1437,12 +1441,12 @@ msgstr "Metatieto"
 #: contrib/comments/feeds.py:13
 #, python-format
 msgid "%(site_name)s comments"
-msgstr "%(site_name)s: kommentit"
+msgstr "Kommentit sivustolle %(site_name)s"
 
 #: contrib/comments/feeds.py:23
 #, python-format
 msgid "Latest comments on %(site_name)s"
-msgstr "%(site_name)s: viimeisimmät kommentit"
+msgstr "Sivuston %(site_name)s viimeisimmät kommentit"
 
 #: contrib/comments/forms.py:93
 #: contrib/comments/templates/comments/moderation_queue.html:34
@@ -1579,7 +1583,7 @@ msgstr "Hyväksy kommentti"
 
 #: contrib/comments/templates/comments/approve.html:7
 msgid "Really make this comment public?"
-msgstr "Julkistetaanko tämä kommentti?"
+msgstr "Haluatko varmasti tehdä kommentista julkisen?"
 
 #: contrib/comments/templates/comments/approve.html:12
 #: contrib/comments/templates/comments/moderation_queue.html:49
@@ -1588,14 +1592,15 @@ msgstr "Hyväksy"
 
 #: contrib/comments/templates/comments/approved.html:4
 msgid "Thanks for approving"
-msgstr "Kiitos hyväksymisestä"
+msgstr "Kiitos hyväksynnästäsi"
 
 #: contrib/comments/templates/comments/approved.html:7
 #: contrib/comments/templates/comments/deleted.html:7
 #: contrib/comments/templates/comments/flagged.html:7
 msgid ""
 "Thanks for taking the time to improve the quality of discussion on our site"
-msgstr "Kiitos sivustomme keskustelun laatuun panostamastasi ajasta"
+msgstr ""
+"Kiitos sivustomme keskusteluihin panostamastasi ajasta"
 
 #: contrib/comments/templates/comments/delete.html:4
 msgid "Remove a comment"
@@ -1603,7 +1608,7 @@ msgstr "Poista kommentti"
 
 #: contrib/comments/templates/comments/delete.html:7
 msgid "Really remove this comment?"
-msgstr "Poistetaanko tämä kommentti?"
+msgstr "Haluatko varmasti poistaa tämän kommentin?"
 
 #: contrib/comments/templates/comments/delete.html:12
 #: contrib/comments/templates/comments/moderation_queue.html:53
@@ -1612,7 +1617,7 @@ msgstr "Poista"
 
 #: contrib/comments/templates/comments/deleted.html:4
 msgid "Thanks for removing"
-msgstr "Kiitos poistosta"
+msgstr "Kiitos poistamisesta"
 
 #: contrib/comments/templates/comments/flag.html:4
 msgid "Flag this comment"
@@ -1620,7 +1625,7 @@ msgstr "Merkitse tämä kommentti"
 
 #: contrib/comments/templates/comments/flag.html:7
 msgid "Really flag this comment?"
-msgstr "Merkitäänkö tämä kommentti?"
+msgstr "Haluatko varmasti merkitä tämän kommentin?"
 
 #: contrib/comments/templates/comments/flag.html:12
 msgid "Flag"
@@ -1663,7 +1668,7 @@ msgstr "IP-osoite"
 
 #: contrib/comments/templates/comments/moderation_queue.html:40
 msgid "Date posted"
-msgstr "Lähettämispäivä"
+msgstr "Lähettämispvm"
 
 #: contrib/comments/templates/comments/moderation_queue.html:63
 msgid "yes"
@@ -1792,7 +1797,7 @@ msgstr "Virheellinen geometriatyyppi."
 msgid ""
 "An error occurred when transforming the geometry to the SRID of the geometry "
 "form field."
-msgstr ""
+msgstr "Kentän SRID-muunnoksessa tapahtui virhe."
 
 #: contrib/humanize/templatetags/humanize.py:19
 msgid "th"
@@ -2120,55 +2125,55 @@ msgstr "Praha"
 
 #: contrib/localflavor/cz/cz_regions.py:9
 msgid "Central Bohemian Region"
-msgstr ""
+msgstr "Central Bohemian Region"
 
 #: contrib/localflavor/cz/cz_regions.py:10
 msgid "South Bohemian Region"
-msgstr ""
+msgstr "South Bohemian Region"
 
 #: contrib/localflavor/cz/cz_regions.py:11
 msgid "Pilsen Region"
-msgstr "Pilsenin aule"
+msgstr "Pilsen Region"
 
 #: contrib/localflavor/cz/cz_regions.py:12
 msgid "Carlsbad Region"
-msgstr ""
+msgstr "Carlsbad Region"
 
 #: contrib/localflavor/cz/cz_regions.py:13
 msgid "Usti Region"
-msgstr "Ustin alue"
+msgstr "Usti Region"
 
 #: contrib/localflavor/cz/cz_regions.py:14
 msgid "Liberec Region"
-msgstr "Liberecin alue"
+msgstr "Liberec Region"
 
 #: contrib/localflavor/cz/cz_regions.py:15
 msgid "Hradec Region"
-msgstr "Hradecin alue"
+msgstr "Hradec Region"
 
 #: contrib/localflavor/cz/cz_regions.py:16
 msgid "Pardubice Region"
-msgstr "Pardubicen alue"
+msgstr "Pardubice Region"
 
 #: contrib/localflavor/cz/cz_regions.py:17
 msgid "Vysocina Region"
-msgstr "Vysocinan alue"
+msgstr "Vysocina Region"
 
 #: contrib/localflavor/cz/cz_regions.py:18
 msgid "South Moravian Region"
-msgstr ""
+msgstr "South Moravian Region"
 
 #: contrib/localflavor/cz/cz_regions.py:19
 msgid "Olomouc Region"
-msgstr ""
+msgstr "Olomouc Region"
 
 #: contrib/localflavor/cz/cz_regions.py:20
 msgid "Zlin Region"
-msgstr "Zlinin alue"
+msgstr "Zilin region"
 
 #: contrib/localflavor/cz/cz_regions.py:21
 msgid "Moravian-Silesian Region"
-msgstr ""
+msgstr "Moravian-Silesian Region"
 
 #: contrib/localflavor/cz/forms.py:27 contrib/localflavor/sk/forms.py:30
 msgid "Enter a postal code in the format XXXXX or XXX XX."
@@ -3895,7 +3900,7 @@ msgstr "Tähän tarvitaan desimaaliluku."
 
 #: db/models/fields/__init__.py:686
 msgid "This value must be a float."
-msgstr "Tähän vaaditaan liukuluku."
+msgstr "Tämän luvun on oltava liukuluku."
 
 #: db/models/fields/__init__.py:746
 msgid "This value must be either None, True or False."
@@ -3999,7 +4004,7 @@ msgstr "Lähetetty tiedosto on tyhjä."
 #, python-format
 msgid ""
 "Ensure this filename has at most %(max)d characters (it has %(length)d)."
-msgstr "Tiedostonimessä voi olla enintään %(max)d merkkiä (nyt niitä on %(length)d)."
+msgstr "Tähän tiedostonimeen kelpaa enintään %(max)d merkkiä (nyt niitä on %(length)d)."
 
 #: forms/fields.py:483
 msgid ""
@@ -4021,7 +4026,7 @@ msgstr "Tämä URL-osoite on rikkinäinen linkki."
 msgid "Select a valid choice. %(value)s is not one of the available choices."
 msgstr "Valitse oikea vaihtoehto. %(value)s ei ole vaihtoehtojen joukossa."
 
-#: forms/fields.py:704 forms/fields.py:765 forms/models.py:863
+#: forms/fields.py:704 forms/fields.py:765 forms/models.py:991
 msgid "Enter a list of values."
 msgstr "Syötä lista."
 
@@ -4040,30 +4045,53 @@ msgstr ""
 msgid "Order"
 msgstr "Järjestys"
 
-#: forms/models.py:363
+#: forms/models.py:367
 #, python-format
 msgid "%(field_name)s must be unique for %(date_field)s %(lookup)s."
-msgstr "%(field_name)s-kentän on oltava yksilöllinen suhteessa: %(date_field)s %(lookup)s."
+msgstr "\"%(field_name)s\"-kentän on oltava uniikki suhteessa: %(date_field)s %(lookup)s."
 
-#: forms/models.py:377 forms/models.py:385
+#: forms/models.py:381 forms/models.py:389
 #, python-format
 msgid "%(model_name)s with this %(field_label)s already exists."
 msgstr "%(model_name)s jolla on tämä %(field_label)s, on jo olemassa."
 
-#: forms/models.py:738
-msgid "The inline foreign key did not match the parent instance primary key."
-msgstr "Sisäkkäinen viiteavain ei täsmää isäolion perusavaimen kanssa."
+#: forms/models.py:581
+#, python-format
+msgid "Please correct the duplicate data for %(field)s."
+msgstr "Korjaa kaksoisarvo kentälle %(field)s."
 
-#: forms/models.py:793
+#: forms/models.py:585
+#, python-format
+msgid "Please correct the duplicate data for %(field)s, which must be unique."
+msgstr "Ole hyvä ja korjaa uniikin kentän %(field)s kaksoisarvo."
+
+#: forms/models.py:591
+#, python-format
+msgid ""
+"Please correct the duplicate data for %(field_name)s which must be unique "
+"for the %(lookup)s in %(date_field)s."
+msgstr ""
+"Please correct the duplicate data for %(field_name)s which must be unique "
+"for the %(lookup)s in %(date_field)s."
+
+#: forms/models.py:599
+msgid "Please correct the duplicate values below."
+msgstr "Korjaa allaolevat kaksoisarvot."
+
+#: forms/models.py:855
+msgid "The inline foreign key did not match the parent instance primary key."
+msgstr "Liittyvä perusavain ei vastannut vanhemman perusavainta."
+
+#: forms/models.py:918
 msgid "Select a valid choice. That choice is not one of the available choices."
 msgstr "Valitse oikea vaihtoehto. Valintasi ei löydy vaihtoehtojen joukosta."
 
-#: forms/models.py:864
+#: forms/models.py:992
 #, python-format
 msgid "Select a valid choice. %s is not one of the available choices."
 msgstr "Valitse oikea vaihtoehto. %s ei löydy vaihtoehtojen joukosta."
 
-#: forms/models.py:866
+#: forms/models.py:994
 #, python-format
 msgid "\"%s\" is not a valid value for a primary key."
 msgstr "\"%s\" ei kelpaa perusavaimeksi."
@@ -4094,27 +4122,27 @@ msgstr "%.1f Mt"
 msgid "%.1f GB"
 msgstr "%.1f Gt"
 
-#: utils/dateformat.py:41
+#: utils/dateformat.py:42
 msgid "p.m."
 msgstr "ip"
 
-#: utils/dateformat.py:42
+#: utils/dateformat.py:43
 msgid "a.m."
 msgstr "ap"
 
-#: utils/dateformat.py:47
+#: utils/dateformat.py:48
 msgid "PM"
 msgstr "IP"
 
-#: utils/dateformat.py:48
+#: utils/dateformat.py:49
 msgid "AM"
 msgstr "AP"
 
-#: utils/dateformat.py:97
+#: utils/dateformat.py:98
 msgid "midnight"
 msgstr "keskiyö"
 
-#: utils/dateformat.py:99
+#: utils/dateformat.py:100
 msgid "noon"
 msgstr "keskipäivä"
 
