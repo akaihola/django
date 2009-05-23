@@ -355,7 +355,7 @@ msgstr "%(name)s \"%(obj)s\" on lisätty."
 #: contrib/admin/options.py:602 contrib/admin/options.py:635
 #: contrib/auth/admin.py:75
 msgid "You may edit it again below."
-msgstr "Voit muokata sitä uudelleen alla."
+msgstr "Voit muokata sitä edelleen alla."
 
 #: contrib/admin/options.py:612 contrib/admin/options.py:645
 #, python-format
@@ -420,15 +420,15 @@ msgstr ""
 
 #: contrib/admin/sites.py:278 contrib/admin/views/decorators.py:40
 msgid "Please log in again, because your session has expired."
-msgstr "Kirjaudu uudelleen sisään, koska istuntosi on vanhentunut."
+msgstr "Kirjaudu uudelleen sisään, sillä istuntosi on vanhentunut."
 
 #: contrib/admin/sites.py:285 contrib/admin/views/decorators.py:47
 msgid ""
 "Looks like your browser isn't configured to accept cookies. Please enable "
 "cookies, reload this page, and try again."
 msgstr ""
-"Selaimesi ei salli evästeitä. Muuta asetukset sallimaan evästeet, lataa tämä "
-"sivu uudelleen ja yritä uudestaan."
+"Selaimesi ei vaikuta sallivan evästeitä. Muuta asetukset sallimaan "
+"evästeet, lataa tämä sivu uudelleen ja yritä uudestaan."
 
 #: contrib/admin/sites.py:301 contrib/admin/sites.py:307
 #: contrib/admin/views/decorators.py:66
@@ -438,7 +438,7 @@ msgstr "Käyttäjätunnuksessa ei saa olla '@'-merkkiä."
 #: contrib/admin/sites.py:304 contrib/admin/views/decorators.py:62
 #, python-format
 msgid "Your e-mail address is not your username. Try '%s' instead."
-msgstr "Käyttäjätunnus ei ole sama kuin sähköpostiosoite. Kokeile '%s'."
+msgstr "Sähköpostiosoitteesi ei ole käyttäjätunnuksesi. Kokeile '%s'."
 
 #: contrib/admin/sites.py:360
 msgid "Site administration"
@@ -487,7 +487,7 @@ msgstr "Etsi"
 
 #: contrib/admin/widgets.py:236
 msgid "Add Another"
-msgstr "Lisää uusi"
+msgstr "Lisää seuraava"
 
 #: contrib/admin/templates/admin/404.html:4
 #: contrib/admin/templates/admin/404.html:8
@@ -536,8 +536,8 @@ msgid ""
 "There's been an error. It's been reported to the site administrators via e-"
 "mail and should be fixed shortly. Thanks for your patience."
 msgstr ""
-"Palvelimella on tapahtunut virhe. Se on ilmoitettu sivuston ylläpitäjille "
-"sähköpostilla ja korjataan pian. Kiitämme kärsivällisyydestä."
+"Palvelimella on tapahtunut virhe. Virheestä on ilmoitettu sivuston "
+"ylläpitäjille ja se hoidetaan pian. Kiitämme kärsivällisyydestä."
 
 #: contrib/admin/templates/admin/actions.html:4
 msgid "Run the selected action"
@@ -747,7 +747,7 @@ msgid ""
 "This object doesn't have a change history. It probably wasn't added via this "
 "admin site."
 msgstr ""
-"Tällä kohteella ei ole muutoshistoriaa. Sitä ei ole lisätty tämän "
+"Tällä kohteella ei ole muutoshistoriaa. Sitä ei ole ilmeisesti lisätty tämän "
 "ylläpitosivun avulla."
 
 #: contrib/admin/templates/admin/pagination.html:10
@@ -1242,17 +1242,17 @@ msgid ""
 "Required. 30 characters or fewer. Alphanumeric characters only (letters, "
 "digits and underscores)."
 msgstr ""
-" Vaaditaan. Enintään 30 kirjanta (a-z), numeroa (0-9) tai alaviivaa (_)."
+" Vaaditaan. Enintään 30 kirjanta (A-Z, a-z), numeroa (0-9) tai alaviivaa (_)."
 
 #: contrib/auth/forms.py:16 contrib/auth/forms.py:49
 msgid "This value must contain only letters, numbers and underscores."
 msgstr ""
-"Tässä voidaan käyttää vain kirjaimia (a-z), numeroita (0-9) ja alaviivoja "
-"(_)."
+"Tässä voidaan käyttää vain kirjaimia (A-Z, a-z), numeroita (0-9) ja "
+"alaviivoja (_)."
 
 #: contrib/auth/forms.py:18
 msgid "Password confirmation"
-msgstr "Salasanan muuttaminen"
+msgstr "Salasanan vahvistaminen"
 
 #: contrib/auth/forms.py:30
 msgid "A user with that username already exists."
@@ -1271,7 +1271,7 @@ msgstr "Tämä käyttäjätili ei ole voimassa."
 msgid ""
 "Your Web browser doesn't appear to have cookies enabled. Cookies are "
 "required for logging in."
-msgstr "Selaimesi ei salli evästeitä. Sisäänkirjautuminen vaatii evästeen."
+msgstr "Selaimesi ei näytä sallivan evästeitä. Sisäänkirjautuminen vaatii evästeen."
 
 #: contrib/auth/forms.py:100
 msgid "E-mail"
@@ -1364,7 +1364,7 @@ msgstr "ylläpitäjä"
 
 #: contrib/auth/models.py:133
 msgid "Designates whether the user can log into this admin site."
-msgstr "Määrää, pääseekö käyttäjä tähän sivuston ylläpito-osioon."
+msgstr "Määrittää, pääseekö käyttäjä tähän sivuston ylläpito-osioon."
 
 #: contrib/auth/models.py:134
 msgid "active"
@@ -1391,7 +1391,7 @@ msgstr ""
 
 #: contrib/auth/models.py:136
 msgid "last login"
-msgstr "viimeksi kirjautunut"
+msgstr "viimeisin kirjautuminen"
 
 #: contrib/auth/models.py:137
 msgid "date joined"
@@ -1402,8 +1402,8 @@ msgid ""
 "In addition to the permissions manually assigned, this user will also get "
 "all permissions granted to each group he/she is in."
 msgstr ""
-"Tässä valittujen oikeuksien lisäksi käyttäjä saa myös kaikki niiden ryhmien "
-"oikeudet, joiden jäsen hän on."
+"Erikseen mainittujen oikeuksien lisäksi käyttäjä saa myös kaikki niiden "
+"ryhmien oikeudet, joiden jäsen hän on."
 
 #: contrib/auth/models.py:140
 msgid "user permissions"
@@ -1725,8 +1725,8 @@ msgid ""
 "This value must contain only letters, numbers, underscores, dashes or "
 "slashes."
 msgstr ""
-"Tässä voidaan käyttää vain kirjaimia (a-z), numeroita (0-9) sekä ala-, tavu- "
-"ja kauttaviivoja (_ - /)."
+"Tässä voidaan käyttää vain kirjaimia (a-z, A-Z), numeroita (0-9) sekä "
+"ala-, tavu- ja kauttaviivoja (_ - /)."
 
 #: contrib/flatpages/admin.py:22
 msgid "Advanced options"
@@ -1912,15 +1912,15 @@ msgstr "Burgenland"
 
 #: contrib/localflavor/at/at_states.py:6
 msgid "Carinthia"
-msgstr "Carinthia"
+msgstr "Kärnten"
 
 #: contrib/localflavor/at/at_states.py:7
 msgid "Lower Austria"
-msgstr "Lower Austria"
+msgstr "Ala-Itävalta"
 
 #: contrib/localflavor/at/at_states.py:8
 msgid "Upper Austria"
-msgstr "Upper Austria"
+msgstr "Ylä-Itävalta"
 
 #: contrib/localflavor/at/at_states.py:9
 msgid "Salzburg"
@@ -1928,11 +1928,11 @@ msgstr "Salzburg"
 
 #: contrib/localflavor/at/at_states.py:10
 msgid "Styria"
-msgstr "Styria"
+msgstr "Steiermark"
 
 #: contrib/localflavor/at/at_states.py:11
 msgid "Tyrol"
-msgstr "Tyrol"
+msgstr "Tiroli"
 
 #: contrib/localflavor/at/at_states.py:12
 msgid "Vorarlberg"
@@ -1940,7 +1940,7 @@ msgstr "Vorarlberg"
 
 #: contrib/localflavor/at/at_states.py:13
 msgid "Vienna"
-msgstr "Vienna"
+msgstr "Wien"
 
 #: contrib/localflavor/at/forms.py:20 contrib/localflavor/ch/forms.py:16
 #: contrib/localflavor/no/forms.py:12
