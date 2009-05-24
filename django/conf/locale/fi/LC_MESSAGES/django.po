@@ -6,9 +6,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Django\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-05-20 15:10+0300\n"
+"POT-Creation-Date: 2009-05-24 14:45+0300\n"
 "PO-Revision-Date: 2007-09-15 00:34+0300\n"
-"Last-Translator: Ville Säävuori <ville@unessa.net>\n"
+"Last-Translator: Leo "hylje" Honkanen <sealage@gmail.com>\n"
 "Language-Team: Django I18N <Django-I18N@googlegroups.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -427,8 +427,8 @@ msgid ""
 "Looks like your browser isn't configured to accept cookies. Please enable "
 "cookies, reload this page, and try again."
 msgstr ""
-"Selaimesi ei vaikuta sallivan evästeitä. Muuta asetukset sallimaan "
-"evästeet, lataa tämä sivu uudelleen ja yritä uudestaan."
+"Selaimesi ei vaikuta sallivan evästeitä. Muuta asetukset sallimaan evästeet, "
+"lataa tämä sivu uudelleen ja yritä uudestaan."
 
 #: contrib/admin/sites.py:301 contrib/admin/sites.py:307
 #: contrib/admin/views/decorators.py:66
@@ -660,9 +660,8 @@ msgid ""
 "your account doesn't have permission to delete the following types of "
 "objects:"
 msgstr ""
-"Kohteen (%(object_name)s) poisto poistaisi myös siihen "
-"liittyviä kohteita, mutta sinulla ei ole oikeutta näiden kohteiden "
-"poistamiseen:"
+"Kohteen (%(object_name)s) poisto poistaisi myös siihen liittyviä kohteita, "
+"mutta sinulla ei ole oikeutta näiden kohteiden poistamiseen:"
 
 #: contrib/admin/templates/admin/delete_selected_confirmation.html:22
 #, python-format
@@ -670,8 +669,8 @@ msgid ""
 "Are you sure you want to delete the selected %(object_name)s objects? All of "
 "the following objects and it's related items will be deleted:"
 msgstr ""
-"Haluatko varmasti poistaa valitut (%(object_name)s) kohteet? "
-"Myös seuraavat kohteet poistettaisiin samalla:"
+"Haluatko varmasti poistaa valitut (%(object_name)s) kohteet? Myös seuraavat "
+"kohteet poistettaisiin samalla:"
 
 #: contrib/admin/templates/admin/filter.html:2
 #, python-format
@@ -1271,7 +1270,8 @@ msgstr "Tämä käyttäjätili ei ole voimassa."
 msgid ""
 "Your Web browser doesn't appear to have cookies enabled. Cookies are "
 "required for logging in."
-msgstr "Selaimesi ei näytä sallivan evästeitä. Sisäänkirjautuminen vaatii evästeen."
+msgstr ""
+"Selaimesi ei näytä sallivan evästeitä. Sisäänkirjautuminen vaatii evästeen."
 
 #: contrib/auth/forms.py:100
 msgid "E-mail"
@@ -1599,8 +1599,7 @@ msgstr "Kiitos hyväksynnästäsi"
 #: contrib/comments/templates/comments/flagged.html:7
 msgid ""
 "Thanks for taking the time to improve the quality of discussion on our site"
-msgstr ""
-"Kiitos sivustomme keskusteluihin panostamastasi ajasta"
+msgstr "Kiitos sivustomme keskusteluihin panostamastasi ajasta"
 
 #: contrib/comments/templates/comments/delete.html:4
 msgid "Remove a comment"
@@ -1725,8 +1724,8 @@ msgid ""
 "This value must contain only letters, numbers, underscores, dashes or "
 "slashes."
 msgstr ""
-"Tässä voidaan käyttää vain kirjaimia (a-z, A-Z), numeroita (0-9) sekä "
-"ala-, tavu- ja kauttaviivoja (_ - /)."
+"Tässä voidaan käyttää vain kirjaimia (a-z, A-Z), numeroita (0-9) sekä ala-, "
+"tavu- ja kauttaviivoja (_ - /)."
 
 #: contrib/flatpages/admin.py:22
 msgid "Advanced options"
@@ -2185,7 +2184,8 @@ msgstr "Syötä henkilötunnus muodossa XXXXXX/XXXX tai XXXXXXXXXX."
 
 #: contrib/localflavor/cz/forms.py:48
 msgid "Invalid optional parameter Gender, valid values are 'f' and 'm'"
-msgstr "Virheellinen valinnainen sukupuoli, valitse 'f' (nainen) tai 'm' (mies)"
+msgstr ""
+"Virheellinen valinnainen sukupuoli, valitse 'f' (nainen) tai 'm' (mies)"
 
 #: contrib/localflavor/cz/forms.py:49
 msgid "Enter a valid birth number."
@@ -4004,7 +4004,9 @@ msgstr "Lähetetty tiedosto on tyhjä."
 #, python-format
 msgid ""
 "Ensure this filename has at most %(max)d characters (it has %(length)d)."
-msgstr "Tähän tiedostonimeen kelpaa enintään %(max)d merkkiä (nyt niitä on %(length)d)."
+msgstr ""
+"Tähän tiedostonimeen kelpaa enintään %(max)d merkkiä (nyt niitä on %(length)"
+"d)."
 
 #: forms/fields.py:483
 msgid ""
@@ -4048,7 +4050,9 @@ msgstr "Järjestys"
 #: forms/models.py:367
 #, python-format
 msgid "%(field_name)s must be unique for %(date_field)s %(lookup)s."
-msgstr "\"%(field_name)s\"-kentän on oltava uniikki suhteessa: %(date_field)s %(lookup)s."
+msgstr ""
+"\"%(field_name)s\"-kentän on oltava uniikki suhteessa: %(date_field)s %"
+"(lookup)s."
 
 #: forms/models.py:381 forms/models.py:389
 #, python-format
