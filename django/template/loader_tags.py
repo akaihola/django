@@ -40,8 +40,9 @@ class BlockContext(object):
             return None
 
 class BlockNode(Node):
-    def __init__(self, name, nodelist, parent=None):
+    def __init__(self, name, nodelist, parent=None, tmplsrc=None):
         self.name, self.nodelist, self.parent = name, nodelist, parent
+        self.tmplsrc = tmplsrc
 
     def __repr__(self):
         return "<Block Node: %s. Contents: %r>" % (self.name, self.nodelist)
@@ -52,25 +53,50 @@ class BlockNode(Node):
         if block_context is None:
             context['block'] = self
             result = self.nodelist.render(context)
+            tmplsrc = self.tmplsrc
         else:
             push = block = block_context.pop(self.name)
             if block is None:
                 block = self
             # Create new block so we can store context without thread-safety issues.
-            block = BlockNode(block.name, block.nodelist)
+            block = BlockNode(block.name, block.nodelist, tmplsrc=block.tmplsrc)
             block.context = context
             context['block'] = block
             result = block.nodelist.render(context)
             if push is not None:
                 block_context.push(self.name, push)
+            path = self.get_path(context)
+            tmplsrc = block.tmplsrc
         context.pop()
-        return result
+
+        return (u'<!-- {{% block {name} [{tmplsrc}] %}} -->\n'
+                u'{result}\n'
+                u'<!-- {{% endblock {name} [{tmplsrc}] %}} -->\n'
+                .format(name=u'/'.join(path),
+                        result=result,
+                        tmplsrc=tmplsrc))
+
+    def get_path(self, context):
+        path = []
+        for ctx in context.dicts:
+            if 'block' in ctx:
+                block_name = ctx['block'].name
+                if not path or block_name != path[-1]:
+                    path.append(block_name)
+        return path
 
     def super(self):
         render_context = self.context.render_context
         if (BLOCK_CONTEXT_KEY in render_context and
             render_context[BLOCK_CONTEXT_KEY].get_block(self.name) is not None):
-            return mark_safe(self.render(self.context))
+            path = self.get_path(self.context)
+            return mark_safe(
+                u'<!-- {{{{ block.super {name} [{tmplsrc}] }}}} -->\n'
+                u'{result}\n'
+                u'<!-- {{{{ /block.super {name} [{tmplsrc}] }}}} -->\n'.format(
+                    name=u'/'.join(path),
+                    result=self.render(self.context),
+                    tmplsrc=self.tmplsrc))
         return ''
 
 class ExtendsNode(Node):
@@ -195,7 +221,7 @@ def do_block(parser, token):
     if endblock.contents not in acceptable_endblocks:
         parser.invalid_block_tag(endblock, 'endblock', acceptable_endblocks)
 
-    return BlockNode(block_name, nodelist)
+    return BlockNode(block_name, nodelist, tmplsrc=token.source[0].loadname)
 
 @register.tag('extends')
 def do_extends(parser, token):
